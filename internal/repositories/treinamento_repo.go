@@ -79,3 +79,43 @@ func InserirTreinamento(t models.Treinamento) (string, error) {
 	// Se deu tudo certo, retorna o ID novinho em folha e "nil" para o erro!
 	return idGerado, nil
 }
+
+func ListarTreinamentos() ([]models.TreinamentoResumo, error) {
+	//Começando Montando a query para selecionar as informações do banco de dados
+	query := `
+		SELECT id, tema, segmento_alvo, horario_inicio, conteudo, status
+		FROM treinamentos
+		ORDER BY horario_inicio DESC
+	`
+	//Utilizando a query e acessando o banco de dados
+	linhas, err := database.DB.Query(query)
+
+	if err != nil {
+		return nil, fmt.Errorf("Erro ao buscar treinamentos: %v", err)
+
+	}
+
+	defer linhas.Close()
+	// Criando lista para guardar os dados que veem do banco de dados
+	var lista []models.TreinamentoResumo
+
+	//Loop para percorrer cada linha que o banco de dados devolveu
+	for linhas.Next() {
+		var t models.TreinamentoResumo
+
+		var dataHoraBanco time.Time
+
+		err := linhas.Scan(&t.ID, &t.Tema, &t.Segmento, &dataHoraBanco, &t.Conteudo, &t.Status)
+
+		if err != nil {
+			return nil, fmt.Errorf("erro ao ler os dados da linha: %v", err)
+		}
+
+		t.Data = dataHoraBanco.Format("02 Jan 2006 às 15:04")
+
+		lista = append(lista, t)
+	}
+
+	return lista, nil
+
+}

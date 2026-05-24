@@ -44,3 +44,29 @@ func CadastrarTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, "Treinamento '%s' criado com sucesso! O ID para o Google Forms é: %s", novoTreinamento.Tema, idGerado)
 }
+
+//Função Get que pega os dados do treinamento e lança na tela de lista
+
+func ListarTreinamentosHandler(w http.ResponseWriter, r *http.Request) {
+
+	//Verificando se esta usando o comando Get
+	if r.Method != http.MethodGet {
+		http.Error(w, "Método não permitido. Use Get.", http.StatusMethodNotAllowed)
+		return
+	}
+
+	//Buscando a lista do banco de dados
+	lista, err := repositories.ListarTreinamentos()
+
+	//Verificacao de erro de conexao
+	if err != nil {
+		http.Error(w, "Erro ao buscar a lista de treinamentos", http.StatusInternalServerError)
+		fmt.Println("Erro na listagem:", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(lista)
+
+}

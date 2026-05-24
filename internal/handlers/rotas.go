@@ -13,4 +13,7 @@ func ConfigurarRotas() {
 
 	http.HandleFunc("/api/treinamentos/webhook-forms", ReceberInscricaoForms)
 
+	//Rota de listar os treinamentos
+	http.HandleFunc("/api/treinamentos", ListarTreinamentosHandler)
+
 }
