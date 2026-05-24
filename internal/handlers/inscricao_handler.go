@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/Grupo07-ProjetoIntegrador/backend/internal/models"
+	//"github.com/Grupo07-ProjetoIntegrador/backend/internal/repositories"
 )
 
 // ReceberInscricaoForms atende o POST automático vindo do Google Forms
@@ -13,7 +16,7 @@ func ReceberInscricaoForms(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var inscricao InscricaoFormsRequest
+	var inscricao models.InscricaoFormsRequest
 	err := json.NewDecoder(r.Body).Decode(&inscricao)
 	if err != nil {
 		http.Error(w, "Erro ao ler dados do Forms", http.StatusBadRequest)

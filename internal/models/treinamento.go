@@ -15,4 +15,13 @@ type Treinamento struct {
 	CapacidadeMaxima int    `json:"capacidade_maxima"` // 'int4' no banco, traduzido para 'int' no Go
 	SegmentoAlvo     string `json:"segmento_alvo"`     // 'varchar'
 	Status           string `json:"status"`            // 'Treinamento_status' (Enum no banco, 'string' no Go)
+
+	Objetivo      string `json:"objetivo"`
+	Observacoes   string `json:"observacoes"`
+	MaterialApoio string `json:"material_apoio"`
+
+	Responsavel     string `json:"responsavel"`
+	AreaResponsavel string `json:"area_responsavel"`
+	Tags            string `json:"tags"`
+	Recorrente      bool   `json:"recorrente"`
 }

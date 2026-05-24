@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Grupo07-ProjetoIntegrador/backend/internal/database"
+	"github.com/Grupo07-ProjetoIntegrador/backend/internal/handlers"
 	"github.com/joho/godotenv" // Importando uma biblioteca externa
 )
 
@@ -18,6 +19,8 @@ func main() {
 	if database.DB != nil {
 		defer database.DB.Close()
 	}
+
+	handlers.ConfigurarRotas()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "API do Módulo de Treinamentos rodando com sucesso!")

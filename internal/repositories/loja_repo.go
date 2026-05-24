@@ -17,7 +17,7 @@ func InserirLoja(novaLoja models.Loja) error {
 	_, err := database.DB.Exec(query, novaLoja.LUC, novaLoja.Nome, novaLoja.Segmento, novaLoja.Status)
 
 	if err != nil {
-		return fmt.Errorf("Erro ao inserir loja no banco: v%", err)
+		return fmt.Errorf("Erro ao inserir loja no banco: %v", err)
 	}
 
 	return nil
