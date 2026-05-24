@@ -113,6 +113,9 @@ func ListarTreinamentos() ([]models.TreinamentoResumo, error) {
 
 		t.Data = dataHoraBanco.Format("02 Jan 2006 às 15:04")
 
+		t.DataHora = dataHoraBanco.Format("2006-01-02T15:04:00")
+		t.HorarioInicio = dataHoraBanco.Format("15:04")
+
 		lista = append(lista, t)
 	}
 
