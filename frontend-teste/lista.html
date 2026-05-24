@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestão de Treinamentos - Teste</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f7f4ef; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;}
+        h2 { color: #c4151f; margin: 0; }
+        .btn-novo { background-color: #c4151f; color: white; text-decoration: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; }
+        .btn-novo:hover { background-color: #8B1A1A; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
+        th { background-color: #f9f9f9; color: #555; font-size: 14px; }
+        .status-badge { background-color: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>Próximos e Recentes</h2>
+        <a href="formulariotreinamento.html" class="btn-novo">+ Novo Treinamento</a>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>TEMA</th>
+                <th>SEGMENTO</th>
+                <th>DATA</th>
+                <th>CONTEÚDO</th>
+                <th>STATUS</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-corpo">
+            <!-- O JavaScript vai injetar as linhas aqui! -->
+            <tr><td colspan="5">Carregando treinamentos do banco de dados...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Busca a lista no seu Back-end em Go
+        fetch("http://localhost:8080/api/treinamentos")
+        .then(resposta => resposta.json())
+        .then(listaTreinamentos => {
+            const corpoTabela = document.getElementById("tabela-corpo");
+            corpoTabela.innerHTML = ""; // Limpa a mensagem de carregando
+
+            if (!listaTreinamentos || listaTreinamentos.length === 0) {
+                corpoTabela.innerHTML = "<tr><td colspan='5'>Nenhum treinamento encontrado.</td></tr>";
+                return;
+            }
+
+            // Cria uma linha na tabela para cada treinamento que veio do banco
+            listaTreinamentos.forEach(t => {
+                const linha = `
+                    <tr>
+                        <td><strong>${t.tema}</strong></td>
+                        <td>${t.segmento}</td>
+                        <td>🗓️ ${t.data}</td>
+                        <td>${t.conteudo.substring(0, 40)}...</td>
+                        <td><span class="status-badge">${t.status}</span></td>
+                    </tr>
+                `;
+                corpoTabela.innerHTML += linha;
+            });
+        })
+        .catch(erro => {
+            console.error("Erro ao buscar a lista:", erro);
+            document.getElementById("tabela-corpo").innerHTML = "<tr><td colspan='5' style='color:red;'>Erro ao conectar com a API. O servidor Go está rodando?</td></tr>";
+        });
+    });
+</script>
+
+</body>
+</html>

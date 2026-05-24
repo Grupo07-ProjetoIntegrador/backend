@@ -12,6 +12,16 @@ import (
 
 // CadastrarTreinamentoHandler recebe os dados da tela "Cadastrar Novo Treinamento"
 func CadastrarTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
+	// Liberar o CORS para o Front-end conseguir acessar
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	// Se o navegador estiver apenas testando a conexão (Preflight OPTIONS), retorna OK
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	// 1. Verifica se o Front-end está mandando um POST
 	if r.Method != http.MethodPost {
 		http.Error(w, "Método não permitido. Use POST.", http.StatusMethodNotAllowed)
@@ -48,6 +58,16 @@ func CadastrarTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
 //Função Get que pega os dados do treinamento e lança na tela de lista
 
 func ListarTreinamentosHandler(w http.ResponseWriter, r *http.Request) {
+	// Liberar o CORS para o Front-end conseguir acessar
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	// Se o navegador estiver apenas testando a conexão (Preflight OPTIONS), retorna OK
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	//Verificando se esta usando o comando Get
 	if r.Method != http.MethodGet {
