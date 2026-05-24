@@ -1,0 +1,18 @@
+package models
+
+// Treinamento representa o molde exato da tabela 'treinamentos' no banco de dados
+type Treinamento struct {
+	ID               string `json:"id"`                // No banco é 'uuid', no Go usamos 'string'
+	Tema             string `json:"tema"`              // 'varchar'
+	Descricao        string `json:"descricao"`         // 'text'
+	Categoria        string `json:"categoria"`         // 'varchar'
+	Data             string `json:"data"`              // 'timestamp' no banco, 'string' facilita receber o JSON do front
+	HorarioInicio    string `json:"horario_inicio"`    // 'timestamp'
+	HorarioFim       string `json:"horario_fim"`       // 'timestamp'
+	Local            string `json:"local"`             // 'text'
+	Modalidade       string `json:"modalidade"`        // 'varchar'
+	Conteudo         string `json:"conteudo"`          // 'text'
+	CapacidadeMaxima int    `json:"capacidade_maxima"` // 'int4' no banco, traduzido para 'int' no Go
+	SegmentoAlvo     string `json:"segmento_alvo"`     // 'varchar'
+	Status           string `json:"status"`            // 'Treinamento_status' (Enum no banco, 'string' no Go)
+}
