@@ -13,4 +13,7 @@ func ConfigurarRotas() {
 
 	http.HandleFunc("/api/treinamentos/webhook-forms", ReceberInscricaoForms)
 
+	// Rota para o check-in automático (Auto-presença via QR Code)
+	http.HandleFunc("/api/presencas/confirmar", ConfirmarPresencaHandler)
+
 }

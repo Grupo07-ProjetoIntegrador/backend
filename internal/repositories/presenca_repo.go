@@ -7,17 +7,17 @@ import (
 )
 
 // InserirPresencaPendente salva a inscrição vinda do Forms com o status inicial 'PENDENTE'
-func InserirPresencaPendente(treinamentoID string, lojaID string, nomeParticipante string) error {
+func InserirPresencaPendente(treinamentoID string, lojaID string, nomeParticipante string, email string, telefone string, cargo string) error {
 	// 1. O COMANDO SQL
 	// Baseado na estrutura da sua tabela, inserimos os dados e fixamos o status
 	query := `
-		INSERT INTO presencas (treinamento_id, loja_id, nome_participante, status_presenca) 
-		VALUES ($1, $2, $3, 'PENDENTE')
+		INSERT INTO presencas (treinamento_id, loja_id, nome_participante, email, telefone, cargo, status_presenca) 
+		VALUES ($1, $2, $3, $4, $5, $6, 'PENDENTE')
 	`
 
 	// 2. A EXECUÇÃO NO BANCO
-	// Substituímos o $1, $2 e $3 pelas variáveis que o handler nos enviou
-	_, err := database.DB.Exec(query, treinamentoID, lojaID, nomeParticipante)
+	// Substituímos os parâmetros pelas variáveis que o handler nos enviou
+	_, err := database.DB.Exec(query, treinamentoID, lojaID, nomeParticipante, email, telefone, cargo)
 
 	// 3. TRATAMENTO DE ERRO
 	if err != nil {
@@ -45,6 +45,31 @@ func AtualizarStatusPresenca(presencaID string, novoStatus string) error {
 	// 3. Tratamento de erro
 	if err != nil {
 		return fmt.Errorf("erro ao atualizar o status da presença: %v", err)
+	}
+
+	return nil
+}
+
+// ConfirmarPresencaPorEmail atualiza o status_presenca de 'PENDENTE' para 'PRESENTE'
+// buscando pela combinação de treinamento_id e email que esteja com status 'PENDENTE'.
+func ConfirmarPresencaPorEmail(treinamentoID string, email string) error {
+	query := `
+		UPDATE presencas 
+		SET status_presenca = 'PRESENTE' 
+		WHERE treinamento_id = $1 AND email = $2 AND status_presenca = 'PENDENTE'
+	`
+
+	res, err := database.DB.Exec(query, treinamentoID, email)
+	if err != nil {
+		return fmt.Errorf("erro ao atualizar o status de presença para PRESENTE: %v", err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return fmt.Errorf("nenhuma inscrição PENDENTE encontrada para este e-mail neste treinamento")
 	}
 
 	return nil
