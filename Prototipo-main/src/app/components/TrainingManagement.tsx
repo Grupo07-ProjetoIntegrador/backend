@@ -346,11 +346,33 @@ export function TrainingManagement() {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (trainingToDelete) {
-      setTrainingsList((prev) => prev.filter((t) => t.id !== trainingToDelete.id));
-      setTrainingToDelete(null);
-    }
+      try {
+            // 1. Front solicita com o fetch para o back com o pedido e o metodo CRUD
+            const response = await fetch(`http://localhost:8080/api/treinamentos/deletar?id=${trainingToDelete.id}`, {
+                method: "DELETE",
+            });
+
+            // Se tiver OK retorna 200 OK
+            if (response.ok) {
+                // 3. Exclui o dado
+                setTrainingsList((prev) => prev.filter((t) => t.id !== trainingToDelete.id)); 
+                
+                // 4. Fecha a caixinha de aviso
+                setTrainingToDelete(null); 
+                
+                alert("Treinamento excluído com sucesso do banco de dados!");
+            } else {
+                // Se ID não existe
+                alert("Erro ao excluir. O servidor Go recusou o pedido.");
+            }
+        } catch (error) {
+            // Se erro no servidor ex: Servidor Go está desligado
+            console.error("Erro ao conectar com o Go:", error);
+            alert("Erro de conexão. O servidor Go está rodando?");
+        }      
+    }    
   };
 
   const handleSuccess = async () => {
