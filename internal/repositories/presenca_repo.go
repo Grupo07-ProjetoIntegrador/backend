@@ -49,3 +49,31 @@ func AtualizarStatusPresenca(presencaID string, novoStatus string) error {
 
 	return nil
 }
+
+//Função para salvar os dados de planilhas
+
+func SalvarPresencaPlanilha(treinamentoID string, luc string, nomeParticipante string, status string) error {
+	// 2. A Mágica da Subquery no SQL
+	// Na hora de inserir o loja_id, nós fazemos um (SELECT id FROM lojas WHERE luc = $2).
+	// Omitimos email, telefone e cargo porque a planilha antiga não tem esses dados.
+
+	query := `
+		INSERT INTO presencas (treinamento_id, loja_id, nome_participante, status_presenca)
+		VALUES(
+			$1,
+			(SELECT id FROM lojas WHERE luc = $2 LIMIT 1),
+			$3,
+			$4
+		)
+	
+	`
+	//Executa a query
+	_, err := database.DB.Exec(query, treinamentoID, luc, nomeParticipante, status)
+
+	if err != nil {
+		return fmt.Errorf("erro ao inserir presença do LUC %s: %v", luc, err)
+	}
+
+	return nil
+
+}

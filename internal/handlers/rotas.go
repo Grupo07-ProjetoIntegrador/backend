@@ -16,4 +16,7 @@ func ConfigurarRotas() {
 	//Rota de listar os treinamentos
 	http.HandleFunc("/api/treinamentos", ListarTreinamentosHandler)
 
+	//Rota de deletar treinamento
+	http.HandleFunc("/api/treinamentos/deletar", DeletarTreinamentoHandler)
+
 }

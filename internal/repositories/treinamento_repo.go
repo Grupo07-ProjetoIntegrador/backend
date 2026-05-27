@@ -122,3 +122,40 @@ func ListarTreinamentos() ([]models.TreinamentoResumo, error) {
 	return lista, nil
 
 }
+
+// DeletarTreinamento remove um treinamento do banco de dados usando o seu ID
+
+func DeletarTreinamento(id string) error {
+	//Escrever o comando de delete do SQL
+
+	query := `DELETE FROM treinamentos WHERE id = $1`
+	fmt.Println("DEBUG: O ID que chegou no banco é:", id)
+
+	//Comando Exec vai ate o banco de dados e pega o valor do id
+
+	resultado, err := database.DB.Exec(query, id)
+
+	//Verifica se a conexão com banco de dados falhou
+	if err != nil {
+		return err
+	}
+
+	//Pergunta quantas linhas foram apagadas com esse comando
+
+	linhasAfetadas, err := resultado.RowsAffected()
+	fmt.Println("DEBUG: Quantidade de linhas que o Supabase apagou:", linhasAfetadas)
+	if err != nil {
+		return err
+	}
+
+	//Caso nenhuma linha seja apagada significa que nao existe treinamento com aquele id fornecido
+
+	if linhasAfetadas == 0 {
+		return fmt.Errorf("Nenhum treinamento encontrado com esse ID")
+	}
+
+	//Caso nao tenha nenhum erro vai retornar o nil
+
+	return nil
+
+}

@@ -90,3 +90,48 @@ func ListarTreinamentosHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(lista)
 
 }
+
+func DeletarTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
+
+	//Configuracao do CORS para o front acessar
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	//Trava que faz a URl aceitar somento o DELETE
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Metodo nao permitido. Use DELETE.", http.StatusMethodNotAllowed)
+
+		return
+
+	}
+
+	//Extrai o Id da Url
+	id := r.URL.Query().Get("id")
+
+	//Verifica se o Id foi enviado
+	if id == "" {
+		http.Error(w, "O id de treinamento é obrigatório", http.StatusBadRequest)
+		return
+	}
+
+	//Chama a função do repositório
+
+	err := repositories.DeletarTreinamento(id)
+
+	//Verifica se tem algum erro do err
+
+	if err != nil {
+		http.Error(w, "Erro ao deletar"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	//Caso de tudo certo vem pra ca
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"mensagem": "Treinamento deletado com sucesso!"}`))
+}
