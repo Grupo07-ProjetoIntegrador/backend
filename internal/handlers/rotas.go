@@ -21,4 +21,8 @@ func ConfigurarRotas() {
 
 	// Rota de deletar treinamento
 	http.HandleFunc("/api/treinamentos/deletar", DeletarTreinamentoHandler)
+
+	//Rota para uploado de planilha
+	http.HandleFunc("/api/treinamentos/upload", UploadPlanilhaHandler)
+
 }
