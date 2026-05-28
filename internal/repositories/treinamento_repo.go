@@ -159,3 +159,60 @@ func DeletarTreinamento(id string) error {
 	return nil
 
 }
+// ListarTreinamentos retorna todos os treinamentos do banco ordenados por data
+// func ListarTreinamentos() ([]models.Treinamento, error) {
+// 	query := `
+// 		SELECT 
+// 			COALESCE(id::text, ''), 
+// 			COALESCE(tema, ''), 
+// 			COALESCE(descricao, ''), 
+// 			COALESCE(categoria, ''), 
+// 			COALESCE(data::text, ''), 
+// 			COALESCE(horario_inicio::text, ''), 
+// 			COALESCE(horario_fim::text, ''), 
+// 			COALESCE(local, ''), 
+// 			COALESCE(modalidade, ''), 
+// 			COALESCE(conteudo, ''),
+// 			COALESCE(capacidade_maxima, 0), 
+// 			COALESCE(segmento_alvo, ''), 
+// 			COALESCE(status::text, ''),
+// 			COALESCE(objetivo, ''), 
+// 			COALESCE(observacoes, ''), 
+// 			COALESCE(material_apoio, ''),
+// 			COALESCE(responsavel, ''), 
+// 			COALESCE(area_responsavel, ''), 
+// 			COALESCE(tags, ''), 
+// 			COALESCE(recorrente, false)
+// 		FROM treinamentos
+// 		ORDER BY data DESC
+// 	`
+
+// 	rows, err := database.DB.Query(query)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("erro ao listar treinamentos: %v", err)
+// 	}
+// 	defer rows.Close()
+
+// 	var treinamentos []models.Treinamento
+// 	for rows.Next() {
+// 		var t models.Treinamento
+// 		err := rows.Scan(
+// 			&t.ID, &t.Tema, &t.Descricao, &t.Categoria, &t.Data,
+// 			&t.HorarioInicio, &t.HorarioFim, &t.Local, &t.Modalidade, &t.Conteudo,
+// 			&t.CapacidadeMaxima, &t.SegmentoAlvo, &t.Status,
+// 			&t.Objetivo, &t.Observacoes, &t.MaterialApoio,
+// 			&t.Responsavel, &t.AreaResponsavel, &t.Tags, &t.Recorrente,
+// 		)
+// 		if err != nil {
+// 			return nil, fmt.Errorf("erro ao ler treinamento do banco: %v", err)
+// 		}
+// 		treinamentos = append(treinamentos, t)
+// 	}
+
+// 	if treinamentos == nil {
+// 		treinamentos = []models.Treinamento{}
+// 	}
+
+// 	return treinamentos, nil
+// >>>>>>> automacoes-python
+// }

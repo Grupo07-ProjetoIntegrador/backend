@@ -7,17 +7,17 @@ import (
 )
 
 // InserirPresencaPendente salva a inscrição vinda do Forms com o status inicial 'PENDENTE'
-func InserirPresencaPendente(treinamentoID string, lojaID string, nomeParticipante string) error {
+func InserirPresencaPendente(treinamentoID string, lojaID string, nomeParticipante string, email string, telefone string, cargo string) error {
 	// 1. O COMANDO SQL
 	// Baseado na estrutura da sua tabela, inserimos os dados e fixamos o status
 	query := `
-		INSERT INTO presencas (treinamento_id, loja_id, nome_participante, status_presenca) 
-		VALUES ($1, $2, $3, 'PENDENTE')
-	`
+        INSERT INTO presencas (treinamento_id, loja_id, nome_participante, email, telefone, cargo, status_presenca) 
+        VALUES ($1, $2, $3, $4, $5, $6, 'PENDENTE')
+    `
 
 	// 2. A EXECUÇÃO NO BANCO
-	// Substituímos o $1, $2 e $3 pelas variáveis que o handler nos enviou
-	_, err := database.DB.Exec(query, treinamentoID, lojaID, nomeParticipante)
+	// Substituímos os parâmetros pelas variáveis que o handler nos enviou
+	_, err := database.DB.Exec(query, treinamentoID, lojaID, nomeParticipante, email, telefone, cargo)
 
 	// 3. TRATAMENTO DE ERRO
 	if err != nil {
@@ -34,10 +34,10 @@ func InserirPresencaPendente(treinamentoID string, lojaID string, nomeParticipan
 func AtualizarStatusPresenca(presencaID string, novoStatus string) error {
 	// 1. Comando SQL para ATUALIZAR apenas o status de uma presença específica
 	query := `
-		UPDATE presencas 
-		SET status_presenca = $1 
-		WHERE id = $2
-	`
+        UPDATE presencas 
+        SET status_presenca = $1 
+        WHERE id = $2
+    `
 
 	// 2. Executa o comando no Supabase substituindo $1 pelo novo status e $2 pelo ID
 	_, err := database.DB.Exec(query, novoStatus, presencaID)
@@ -50,24 +50,22 @@ func AtualizarStatusPresenca(presencaID string, novoStatus string) error {
 	return nil
 }
 
-//Função para salvar os dados de planilhas
-
+// SalvarPresencaPlanilha insere os dados vindos de importação de planilhas (Mantido do seu colega)
 func SalvarPresencaPlanilha(treinamentoID string, luc string, nomeParticipante string, status string) error {
 	// 2. A Mágica da Subquery no SQL
 	// Na hora de inserir o loja_id, nós fazemos um (SELECT id FROM lojas WHERE luc = $2).
 	// Omitimos email, telefone e cargo porque a planilha antiga não tem esses dados.
 
 	query := `
-		INSERT INTO presencas (treinamento_id, loja_id, nome_participante, status_presenca)
-		VALUES(
-			$1,
-			(SELECT id FROM lojas WHERE luc = $2 LIMIT 1),
-			$3,
-			$4
-		)
-	
-	`
-	//Executa a query
+        INSERT INTO presencas (treinamento_id, loja_id, nome_participante, status_presenca)
+        VALUES(
+            $1,
+            (SELECT id FROM lojas WHERE luc = $2 LIMIT 1),
+            $3,
+            $4
+        )
+    `
+	// Executa a query
 	_, err := database.DB.Exec(query, treinamentoID, luc, nomeParticipante, status)
 
 	if err != nil {
@@ -75,5 +73,29 @@ func SalvarPresencaPlanilha(treinamentoID string, luc string, nomeParticipante s
 	}
 
 	return nil
+} // <- Chave de fechamento que estava faltando!
 
+// ConfirmarPresencaPorEmail atualiza o status_presenca de 'PENDENTE' para 'PRESENTE'
+// buscando pela combinação de treinamento_id e email que esteja com status 'PENDENTE'. (Mantido do seu código)
+func ConfirmarPresencaPorEmail(treinamentoID string, email string) error {
+	query := `
+        UPDATE presencas 
+        SET status_presenca = 'PRESENTE' 
+        WHERE treinamento_id = $1 AND email = $2 AND status_presenca = 'PENDENTE'
+    `
+
+	res, err := database.DB.Exec(query, treinamentoID, email)
+	if err != nil {
+		return fmt.Errorf("erro ao atualizar o status de presença para PRESENTE: %v", err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return fmt.Errorf("nenhuma inscrição PENDENTE encontrada para este e-mail neste treinamento")
+	}
+
+	return nil
 }

@@ -11,6 +11,15 @@ import (
 
 // Função que atende a requisição para cadastrar a loja
 func CadastrarLojaHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	//1 - Verifica se o metodo HTTP É POST
 	if r.Method != http.MethodPost {
 		http.Error(w, "Método não permitido. Use o Post.", http.StatusMethodNotAllowed)
@@ -42,6 +51,6 @@ func CadastrarLojaHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 
-	fmt.Fprint(w, "A loja '%s' (LUC: '%s') do segmento '%s' foi processada usando model oficial!", novaLoja.Nome, novaLoja.LUC, novaLoja.Segmento)
+	fmt.Fprintf(w, "A loja '%s' (LUC: '%s') do segmento '%s' foi processada usando model oficial!", novaLoja.Nome, novaLoja.LUC, novaLoja.Segmento)
 
 }
