@@ -11,14 +11,39 @@ import (
 	"github.com/Grupo07-ProjetoIntegrador/backend/internal/repositories"
 )
 
-// CadastrarTreinamentoHandler recebe os dados da tela "Cadastrar Novo Treinamento"
-func CadastrarTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
-	// Liberar o CORS para o Front-end conseguir acessar (Mantendo a versão completa do seu colega)
+// ListarTreinamentosHandler retorna todos os treinamentos em JSON
+func ListarTreinamentosHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-	// Se o navegador estiver apenas testando a conexão (Preflight OPTIONS), retorna OK
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Método não permitido. Use GET.", http.StatusMethodNotAllowed)
+		return
+	}
+
+	treinamentos, err := repositories.ListarTreinamentos()
+	if err != nil {
+		fmt.Println("Erro ao listar treinamentos:", err)
+		http.Error(w, "Erro ao buscar treinamentos no banco de dados", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(treinamentos)
+}
+
+// CadastrarTreinamentoHandler recebe os dados da tela "Cadastrar Novo Treinamento"
+func CadastrarTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusOK)
 		return
@@ -52,6 +77,7 @@ func CadastrarTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 5. RESPOSTA DE SUCESSO!
+	// Retorna Status 201 (Criado) e devolve o UUID para o administrador copiar e usar no Google Forms
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, "Treinamento '%s' criado com sucesso! O ID para o Google Forms é: %s", novoTreinamento.Tema, idGerado)
 
@@ -76,40 +102,6 @@ func CadastrarTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
 		defer resp.Body.Close()
 		fmt.Printf("[Automação] Resposta do script de gerar forms: %s\n", resp.Status)
 	}(idGerado, novoTreinamento.Tema)
-}
-
-// ListarTreinamentosHandler busca os dados do treinamento e lança na tela de lista
-func ListarTreinamentosHandler(w http.ResponseWriter, r *http.Request) {
-	// Liberar o CORS para o Front-end conseguir acessar
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	// Se o navegador estiver apenas testando a conexão (Preflight OPTIONS), retorna OK
-	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	// Verificando se esta usando o comando Get
-	if r.Method != http.MethodGet {
-		http.Error(w, "Método não permitido. Use GET.", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Buscando a lista do banco de dados
-	lista, err := repositories.ListarTreinamentos()
-
-	// Verificacao de erro de conexao
-	if err != nil {
-		http.Error(w, "Erro ao buscar a lista de treinamentos", http.StatusInternalServerError)
-		fmt.Println("Erro na listagem:", err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(lista)
 }
 
 // DeletarTreinamentoHandler remove um treinamento do banco através do ID
