@@ -7,5 +7,8 @@ type Presenca struct {
 	LojaID           string `json:"loja_id"`           // uuid no banco (Chave estrangeira)
 	NomeParticipante string `json:"nome_participante"` // varchar
 	StatusPresenca   string `json:"status_presenca"`   // presenca_status (Enum)
+	Email            string `json:"email"`             // varchar
+	Telefone         string `json:"telefone"`          // varchar
+	Cargo            string `json:"cargo"`             // varchar
 	DataRegistro     string `json:"data_registro"`     // timestamp
 }

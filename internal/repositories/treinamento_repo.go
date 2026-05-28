@@ -79,3 +79,140 @@ func InserirTreinamento(t models.Treinamento) (string, error) {
 	// Se deu tudo certo, retorna o ID novinho em folha e "nil" para o erro!
 	return idGerado, nil
 }
+
+func ListarTreinamentos() ([]models.TreinamentoResumo, error) {
+	//Começando Montando a query para selecionar as informações do banco de dados
+	query := `
+		SELECT id, tema, segmento_alvo, horario_inicio, conteudo, status
+		FROM treinamentos
+		ORDER BY horario_inicio DESC
+	`
+	//Utilizando a query e acessando o banco de dados
+	linhas, err := database.DB.Query(query)
+
+	if err != nil {
+		return nil, fmt.Errorf("Erro ao buscar treinamentos: %v", err)
+
+	}
+
+	defer linhas.Close()
+	// Criando lista para guardar os dados que veem do banco de dados
+	var lista []models.TreinamentoResumo
+
+	//Loop para percorrer cada linha que o banco de dados devolveu
+	for linhas.Next() {
+		var t models.TreinamentoResumo
+
+		var dataHoraBanco time.Time
+
+		err := linhas.Scan(&t.ID, &t.Tema, &t.Segmento, &dataHoraBanco, &t.Conteudo, &t.Status)
+
+		if err != nil {
+			return nil, fmt.Errorf("erro ao ler os dados da linha: %v", err)
+		}
+
+		t.Data = dataHoraBanco.Format("02 Jan 2006 às 15:04")
+
+		t.DataHora = dataHoraBanco.Format("2006-01-02T15:04:00")
+		t.HorarioInicio = dataHoraBanco.Format("15:04")
+
+		lista = append(lista, t)
+	}
+
+	return lista, nil
+
+}
+
+// DeletarTreinamento remove um treinamento do banco de dados usando o seu ID
+
+func DeletarTreinamento(id string) error {
+	//Escrever o comando de delete do SQL
+
+	query := `DELETE FROM treinamentos WHERE id = $1`
+	fmt.Println("DEBUG: O ID que chegou no banco é:", id)
+
+	//Comando Exec vai ate o banco de dados e pega o valor do id
+
+	resultado, err := database.DB.Exec(query, id)
+
+	//Verifica se a conexão com banco de dados falhou
+	if err != nil {
+		return err
+	}
+
+	//Pergunta quantas linhas foram apagadas com esse comando
+
+	linhasAfetadas, err := resultado.RowsAffected()
+	fmt.Println("DEBUG: Quantidade de linhas que o Supabase apagou:", linhasAfetadas)
+	if err != nil {
+		return err
+	}
+
+	//Caso nenhuma linha seja apagada significa que nao existe treinamento com aquele id fornecido
+
+	if linhasAfetadas == 0 {
+		return fmt.Errorf("Nenhum treinamento encontrado com esse ID")
+	}
+
+	//Caso nao tenha nenhum erro vai retornar o nil
+
+	return nil
+
+}
+// ListarTreinamentos retorna todos os treinamentos do banco ordenados por data
+// func ListarTreinamentos() ([]models.Treinamento, error) {
+// 	query := `
+// 		SELECT 
+// 			COALESCE(id::text, ''), 
+// 			COALESCE(tema, ''), 
+// 			COALESCE(descricao, ''), 
+// 			COALESCE(categoria, ''), 
+// 			COALESCE(data::text, ''), 
+// 			COALESCE(horario_inicio::text, ''), 
+// 			COALESCE(horario_fim::text, ''), 
+// 			COALESCE(local, ''), 
+// 			COALESCE(modalidade, ''), 
+// 			COALESCE(conteudo, ''),
+// 			COALESCE(capacidade_maxima, 0), 
+// 			COALESCE(segmento_alvo, ''), 
+// 			COALESCE(status::text, ''),
+// 			COALESCE(objetivo, ''), 
+// 			COALESCE(observacoes, ''), 
+// 			COALESCE(material_apoio, ''),
+// 			COALESCE(responsavel, ''), 
+// 			COALESCE(area_responsavel, ''), 
+// 			COALESCE(tags, ''), 
+// 			COALESCE(recorrente, false)
+// 		FROM treinamentos
+// 		ORDER BY data DESC
+// 	`
+
+// 	rows, err := database.DB.Query(query)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("erro ao listar treinamentos: %v", err)
+// 	}
+// 	defer rows.Close()
+
+// 	var treinamentos []models.Treinamento
+// 	for rows.Next() {
+// 		var t models.Treinamento
+// 		err := rows.Scan(
+// 			&t.ID, &t.Tema, &t.Descricao, &t.Categoria, &t.Data,
+// 			&t.HorarioInicio, &t.HorarioFim, &t.Local, &t.Modalidade, &t.Conteudo,
+// 			&t.CapacidadeMaxima, &t.SegmentoAlvo, &t.Status,
+// 			&t.Objetivo, &t.Observacoes, &t.MaterialApoio,
+// 			&t.Responsavel, &t.AreaResponsavel, &t.Tags, &t.Recorrente,
+// 		)
+// 		if err != nil {
+// 			return nil, fmt.Errorf("erro ao ler treinamento do banco: %v", err)
+// 		}
+// 		treinamentos = append(treinamentos, t)
+// 	}
+
+// 	if treinamentos == nil {
+// 		treinamentos = []models.Treinamento{}
+// 	}
+
+// 	return treinamentos, nil
+// >>>>>>> automacoes-python
+// }

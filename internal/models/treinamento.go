@@ -25,3 +25,14 @@ type Treinamento struct {
 	Tags            string `json:"tags"`
 	Recorrente      bool   `json:"recorrente"`
 }
+
+type TreinamentoResumo struct {
+	ID            string `json:"id"`
+	Tema          string `json:"tema"`
+	Segmento      string `json:"segmento"`
+	Data          string `json:"data"`
+	DataHora      string `json:"data_hora"`
+	HorarioInicio string `json:"horario_inicio"`
+	Conteudo      string `json:"conteudo"`
+	Status        string `json:"status"`
+}
