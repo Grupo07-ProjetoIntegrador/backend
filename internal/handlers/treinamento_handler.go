@@ -135,3 +135,36 @@ func DeletarTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"mensagem": "Treinamento deletado com sucesso!"}`))
 }
+
+func UpdateTreinamentosHandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPut {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+
+	//id do treinamento existente 
+	id := r.URL.Query().Get("id")
+
+	//passa os dados do treinamento que quer modificar
+	var UpdateTreinamento models.Treinamento
+
+	//faz a leitura do JSON e retorna um erro caso haja
+	err := json.NewDecoder(r.Body).Decode(&UpdateTreinamento)
+	if err != nil {
+		http.Error(w, "Erro ao fazer o update da ediçao", http.StatusInternalServerError)
+		return
+	}
+
+	//manda o id e o treinamento para a 
+	err = repositories.UpdateTreinamento(id, UpdateTreinamento)
+
+	if err != nil {
+		http.Error(w, "Erro ao fazer Upload", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"mensagem": "Treinamento editado com sucesso!"}`))
+	
+}
