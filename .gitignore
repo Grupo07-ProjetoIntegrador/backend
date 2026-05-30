@@ -1,3 +1,14 @@
 .env
+# Build outputs
+bin/
+dist/
+*.exe
+*.log
+*.out
+
+# Frontend artifacts (if built from repo root)
 Prototipo-main/node_modules/
 Prototipo-main/dist/
+
+# IDE
+.vscode/
