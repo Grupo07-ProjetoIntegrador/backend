@@ -7,6 +7,8 @@ import (
 func ConfigurarRotas() {
 	//Rota de Cadastro de loja
 	http.HandleFunc("/api/lojas/cadastrar", CadastrarLojaHandler)
+	// Rota para listar lojas (com filtro por segmento)
+	http.HandleFunc("/api/lojas", ListarLojasHandler)
 
 	// Quando o formulário da tela for submetido, o front-end envia para cá
 	http.HandleFunc("/api/treinamentos/cadastrar", CadastrarTreinamentoHandler)
@@ -30,6 +32,9 @@ func ConfigurarRotas() {
 
 	// Rota para regerar formulario
 	http.HandleFunc("/api/treinamentos/regerar-formulario", RegerarFormularioTreinamentoHandler)
+
+	// Rota para disparo segmentado de convites por e-mail
+	http.HandleFunc("/api/treinamentos/disparar-convite", DispararConviteTreinamentoHandler)
 
 	// Rota de deletar treinamento
 	http.HandleFunc("/api/treinamentos/deletar", DeletarTreinamentoHandler)

@@ -6,4 +6,5 @@ type Loja struct {
 	Nome     string `json:"nome"`
 	Segmento string `json:"segmento"`
 	Status   bool   `json:"status"`
+	Email    string `json:"email,omitempty"`
 }

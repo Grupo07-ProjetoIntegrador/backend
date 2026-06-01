@@ -8,13 +8,42 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
+	"strings"
 
 	// Importando as pastas do seu projeto
 	"github.com/Grupo07-ProjetoIntegrador/backend/internal/database"
 	"github.com/Grupo07-ProjetoIntegrador/backend/internal/models"
 	"github.com/Grupo07-ProjetoIntegrador/backend/internal/repositories"
 )
+
+type AutomacoesTreinamentoPayload struct {
+	ID            string `json:"id"`
+	Tema          string `json:"tema"`
+	Descricao     string `json:"descricao"`
+	Objetivo      string `json:"objetivo"`
+	Data          string `json:"data"`
+	HorarioInicio string `json:"horario_inicio"`
+	HorarioFim    string `json:"horario_fim"`
+	Local         string `json:"local"`
+	SegmentoAlvo  string `json:"segmento_alvo"`
+}
+
+type ConviteDestinatario struct {
+	Nome     string `json:"nome"`
+	Email    string `json:"email"`
+	Segmento string `json:"segmento"`
+}
+
+type DisparoConviteRequest struct {
+	TreinamentoID       string                `json:"treinamento_id"`
+	Modo                string                `json:"modo"`
+	SegmentoLoja        string                `json:"segmento_loja"`
+	SegmentoTreinamento string                `json:"segmento_treinamento"`
+	Destinatarios       []ConviteDestinatario `json:"destinatarios"`
+	UserID              string                `json:"user_id"`
+}
 
 func resolverCriadorFormulario(urlFormulario string) (string, string) {
 	if urlFormulario == "" {
@@ -47,6 +76,63 @@ func resolverCriadorFormulario(urlFormulario string) (string, string) {
 	}
 
 	return displayName, email
+}
+
+func automacoesBaseURL() string {
+	if baseURL := os.Getenv("AUTOMACOES_PUBLIC_URL"); baseURL != "" {
+		return baseURL
+	}
+
+	return "http://localhost:8000"
+}
+
+func resolverDestinatariosDoDisparo(req DisparoConviteRequest, treinamento models.Treinamento) ([]ConviteDestinatario, error) {
+	if len(req.Destinatarios) > 0 {
+		resolved := make([]ConviteDestinatario, 0, len(req.Destinatarios))
+		for _, destinatario := range req.Destinatarios {
+			item := destinatario
+			if strings.TrimSpace(item.Email) == "" && strings.TrimSpace(item.Nome) != "" {
+				if email, err := repositories.BuscarEmailLojaPorNome(item.Nome); err == nil {
+					item.Email = email
+				}
+			}
+
+			if strings.TrimSpace(item.Email) == "" {
+				return nil, fmt.Errorf("destinatário sem e-mail: %s", item.Nome)
+			}
+
+			resolved = append(resolved, item)
+		}
+
+		return resolved, nil
+	}
+
+	segmentoFiltro := ""
+	switch req.Modo {
+	case "segmento_treinamento":
+		segmentoFiltro = treinamento.SegmentoAlvo
+	case "segmento_loja":
+		segmentoFiltro = req.SegmentoLoja
+	}
+
+	lojas, err := repositories.BuscarLojasComEmailPorSegmento(segmentoFiltro)
+	if err != nil {
+		return nil, err
+	}
+	if len(lojas) == 0 {
+		return nil, fmt.Errorf("nenhuma loja com e-mail encontrado para o disparo")
+	}
+
+	destinatarios := make([]ConviteDestinatario, 0, len(lojas))
+	for _, loja := range lojas {
+		destinatarios = append(destinatarios, ConviteDestinatario{
+			Nome:     loja.Nome,
+			Email:    loja.Email,
+			Segmento: loja.Segmento,
+		})
+	}
+
+	return destinatarios, nil
 }
 
 // CadastrarTreinamentoHandler recebe os dados da tela "Cadastrar Novo Treinamento"
@@ -193,7 +279,7 @@ func GerarFormularioTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tema, err := repositories.BuscarTreinamentoTema(id)
+	treinamento, err := repositories.BuscarTreinamentoPorID(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "Treinamento não encontrado", http.StatusNotFound)
@@ -203,9 +289,19 @@ func GerarFormularioTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	payload := map[string]string{
+	payload := map[string]any{
 		"treinamento_id": id,
-		"tema":           tema,
+		"treinamento": AutomacoesTreinamentoPayload{
+			ID:            treinamento.ID,
+			Tema:          treinamento.Tema,
+			Descricao:     treinamento.Descricao,
+			Objetivo:      treinamento.Objetivo,
+			Data:          treinamento.Data,
+			HorarioInicio: treinamento.HorarioInicio,
+			HorarioFim:    treinamento.HorarioFim,
+			Local:         treinamento.Local,
+			SegmentoAlvo:  treinamento.SegmentoAlvo,
+		},
 	}
 	// Propagar user_id se fornecido (para que o serviço de automacoes use as credenciais do usuario)
 	userID := r.URL.Query().Get("user_id")
@@ -218,7 +314,7 @@ func GerarFormularioTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apiURL := "http://localhost:8000/api/automacoes/gerar-forms"
+	apiURL := automacoesBaseURL() + "/api/automacoes/gerar-forms"
 	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		http.Error(w, "Erro ao chamar automacoes", http.StatusBadGateway)
@@ -234,6 +330,106 @@ func GerarFormularioTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusAccepted)
 	w.Write([]byte(`{"mensagem":"Geração do formulário iniciada"}`))
+}
+
+// DispararConviteTreinamentoHandler envia convites segmentados para os destinatários selecionados.
+func DispararConviteTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Método não permitido. Use POST.", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req DisparoConviteRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Erro ao ler os dados do disparo", http.StatusBadRequest)
+		return
+	}
+
+	if req.TreinamentoID == "" {
+		http.Error(w, "O id de treinamento é obrigatório", http.StatusBadRequest)
+		return
+	}
+
+	treinamento, err := repositories.BuscarTreinamentoPorID(req.TreinamentoID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Treinamento não encontrado", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Erro ao buscar treinamento", http.StatusInternalServerError)
+		return
+	}
+
+	destinatarios, err := resolverDestinatariosDoDisparo(req, treinamento)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	modo := req.Modo
+	if strings.TrimSpace(modo) == "" {
+		modo = "individual"
+	}
+
+	payload := map[string]any{
+		"treinamento_id": req.TreinamentoID,
+		"modo":           modo,
+		"treinamento": AutomacoesTreinamentoPayload{
+			ID:            treinamento.ID,
+			Tema:          treinamento.Tema,
+			Descricao:     treinamento.Descricao,
+			Objetivo:      treinamento.Objetivo,
+			Data:          treinamento.Data,
+			HorarioInicio: treinamento.HorarioInicio,
+			HorarioFim:    treinamento.HorarioFim,
+			Local:         treinamento.Local,
+			SegmentoAlvo:  treinamento.SegmentoAlvo,
+		},
+		"destinatarios":        destinatarios,
+		"segmento_loja":        req.SegmentoLoja,
+		"segmento_treinamento": req.SegmentoTreinamento,
+		"user_id":              req.UserID,
+	}
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		http.Error(w, "Erro ao serializar payload", http.StatusInternalServerError)
+		return
+	}
+
+	apiURL := automacoesBaseURL() + "/api/automacoes/disparar-convite"
+	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		http.Error(w, "Erro ao chamar automacoes", http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		http.Error(w, fmt.Sprintf("Erro ao disparar convites: %s", string(body)), http.StatusBadGateway)
+		return
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	w.Header().Set("Content-Type", "application/json")
+	if len(body) > 0 {
+		w.WriteHeader(http.StatusOK)
+		w.Write(body)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"mensagem":"Disparo de convites iniciado"}`))
 }
 
 // BuscarFormularioTreinamentoHandler retorna o link do formulario quando existir
