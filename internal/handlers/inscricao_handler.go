@@ -23,11 +23,10 @@ func ReceberInscricaoForms(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 1. O código busca no banco de dados se a loja com o 'inscricao.LUC' já existe.
-	// Se não existir, ele cria silenciosamente usando o BuscarOuCriarLoja().
-	lojaID, err := repositories.BuscarOuCriarLoja(inscricao.LUC, inscricao.NomeLoja)
+	// 1. O código busca no banco de dados a loja ativa pelo nome selecionado no Forms.
+	lojaID, err := repositories.BuscarLojaAtivaPorNome(inscricao.NomeLoja)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Erro ao processar loja: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Loja invalida: %v", err), http.StatusBadRequest)
 		return
 	}
 
