@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -159,29 +160,127 @@ func DeletarTreinamento(id string) error {
 	return nil
 
 }
+
+// BuscarTreinamentoTema retorna o tema do treinamento pelo ID
+func BuscarTreinamentoTema(id string) (string, error) {
+	var tema string
+
+	query := `SELECT tema FROM treinamentos WHERE id = $1`
+	err := database.DB.QueryRow(query, id).Scan(&tema)
+	if err != nil {
+		return "", err
+	}
+
+	return tema, nil
+}
+
+// BuscarTreinamentoPorID retorna os dados completos do treinamento para automacoes.
+func BuscarTreinamentoPorID(id string) (models.Treinamento, error) {
+	var t models.Treinamento
+
+	query := `
+		SELECT
+			COALESCE(id::text, ''),
+			COALESCE(tema, ''),
+			COALESCE(descricao, ''),
+			COALESCE(categoria, ''),
+			COALESCE(TO_CHAR(data, 'YYYY-MM-DD'), ''),
+			COALESCE(TO_CHAR(horario_inicio, 'HH24:MI'), ''),
+			COALESCE(TO_CHAR(horario_fim, 'HH24:MI'), ''),
+			COALESCE(local, ''),
+			COALESCE(modalidade, ''),
+			COALESCE(conteudo, ''),
+			COALESCE(capacidade_maxima, 0),
+			COALESCE(segmento_alvo, ''),
+			COALESCE(status::text, ''),
+			COALESCE(objetivo, ''),
+			COALESCE(observacoes, ''),
+			COALESCE(material_apoio, ''),
+			COALESCE(responsavel, ''),
+			COALESCE(area_responsavel, ''),
+			COALESCE(tags, ''),
+			COALESCE(recorrente, false)
+		FROM treinamentos
+		WHERE id = $1
+		LIMIT 1
+	`
+
+	err := database.DB.QueryRow(query, id).Scan(
+		&t.ID,
+		&t.Tema,
+		&t.Descricao,
+		&t.Categoria,
+		&t.Data,
+		&t.HorarioInicio,
+		&t.HorarioFim,
+		&t.Local,
+		&t.Modalidade,
+		&t.Conteudo,
+		&t.CapacidadeMaxima,
+		&t.SegmentoAlvo,
+		&t.Status,
+		&t.Objetivo,
+		&t.Observacoes,
+		&t.MaterialApoio,
+		&t.Responsavel,
+		&t.AreaResponsavel,
+		&t.Tags,
+		&t.Recorrente,
+	)
+	if err != nil {
+		return models.Treinamento{}, err
+	}
+
+	return t, nil
+}
+
+// BuscarFormularioTreinamento retorna o link do formulario e o id do Google Form
+func BuscarFormularioTreinamento(id string) (string, string, error) {
+	var url string
+	var formID string
+
+	query := `
+		SELECT url_formulario, google_form_id
+		FROM formularios_treinamento
+		WHERE treinamento_id = $1
+		ORDER BY criado_em DESC
+		LIMIT 1
+	`
+
+	err := database.DB.QueryRow(query, id).Scan(&url, &formID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", "", sql.ErrNoRows
+		}
+		return "", "", err
+	}
+
+	return url, formID, nil
+}
+
 // ListarTreinamentos retorna todos os treinamentos do banco ordenados por data
 // func ListarTreinamentos() ([]models.Treinamento, error) {
 // 	query := `
-// 		SELECT 
-// 			COALESCE(id::text, ''), 
-// 			COALESCE(tema, ''), 
-// 			COALESCE(descricao, ''), 
-// 			COALESCE(categoria, ''), 
-// 			COALESCE(data::text, ''), 
-// 			COALESCE(horario_inicio::text, ''), 
-// 			COALESCE(horario_fim::text, ''), 
-// 			COALESCE(local, ''), 
-// 			COALESCE(modalidade, ''), 
+// 		SELECT
+// 			COALESCE(id::text, ''),
+// 			COALESCE(tema, ''),
+// 			COALESCE(descricao, ''),
+// 			COALESCE(categoria, ''),
+// 			COALESCE(data::text, ''),
+// 			COALESCE(horario_inicio::text, ''),
+// 			COALESCE(horario_fim::text, ''),
+// 			COALESCE(local, ''),
+// 			COALESCE(modalidade, ''),
 // 			COALESCE(conteudo, ''),
-// 			COALESCE(capacidade_maxima, 0), 
-// 			COALESCE(segmento_alvo, ''), 
+// 			COALESCE(capacidade_maxima, 0),
+// 			COALESCE(segmento_alvo, ''),
 // 			COALESCE(status::text, ''),
-// 			COALESCE(objetivo, ''), 
-// 			COALESCE(observacoes, ''), 
+// 			COALESCE(objetivo, ''),
+// 			COALESCE(observacoes, ''),
 // 			COALESCE(material_apoio, ''),
-// 			COALESCE(responsavel, ''), 
-// 			COALESCE(area_responsavel, ''), 
-// 			COALESCE(tags, ''), 
+// 			COALESCE(responsavel, ''),
+// 			COALESCE(area_responsavel, ''),
+// 			COALESCE(tags, ''),
 // 			COALESCE(recorrente, false)
 // 		FROM treinamentos
 // 		ORDER BY data DESC

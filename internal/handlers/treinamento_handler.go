@@ -1,12 +1,15 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"os"
+	"strings"
 
 	// Importando as pastas do seu projeto
+	"github.com/Grupo07-ProjetoIntegrador/backend/internal/database"
 	"github.com/Grupo07-ProjetoIntegrador/backend/internal/models"
 	"github.com/Grupo07-ProjetoIntegrador/backend/internal/repositories"
 )
@@ -36,6 +39,123 @@ func ListarTreinamentosHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(treinamentos)
+}
+
+type AutomacoesTreinamentoPayload struct {
+	ID            string `json:"id"`
+	Tema          string `json:"tema"`
+	Descricao     string `json:"descricao"`
+	Objetivo      string `json:"objetivo"`
+	Data          string `json:"data"`
+	HorarioInicio string `json:"horario_inicio"`
+	HorarioFim    string `json:"horario_fim"`
+	Local         string `json:"local"`
+	SegmentoAlvo  string `json:"segmento_alvo"`
+}
+
+type ConviteDestinatario struct {
+	Nome     string `json:"nome"`
+	Email    string `json:"email"`
+	Segmento string `json:"segmento"`
+}
+
+type DisparoConviteRequest struct {
+	TreinamentoID       string                `json:"treinamento_id"`
+	Modo                string                `json:"modo"`
+	SegmentoLoja        string                `json:"segmento_loja"`
+	SegmentoTreinamento string                `json:"segmento_treinamento"`
+	Destinatarios       []ConviteDestinatario `json:"destinatarios"`
+	UserID              string                `json:"user_id"`
+}
+
+func resolverCriadorFormulario(urlFormulario string) (string, string) {
+	if urlFormulario == "" {
+		return "", ""
+	}
+
+	parsed, err := url.Parse(urlFormulario)
+	if err != nil || parsed.Fragment == "" {
+		return "", ""
+	}
+
+	fragmentValues, err := url.ParseQuery(parsed.Fragment)
+	if err != nil {
+		return "", ""
+	}
+
+	ownerID := fragmentValues.Get("owner_user_id")
+	if ownerID == "" {
+		return "", ""
+	}
+
+	var displayName string
+	var email string
+	err = database.DB.QueryRow(
+		`SELECT display_name, email FROM profiles WHERE user_id = $1`,
+		ownerID,
+	).Scan(&displayName, &email)
+	if err != nil {
+		return "", ""
+	}
+
+	return displayName, email
+}
+
+func automacoesBaseURL() string {
+	if baseURL := os.Getenv("AUTOMACOES_PUBLIC_URL"); baseURL != "" {
+		return baseURL
+	}
+
+	return "http://localhost:8000"
+}
+
+func resolverDestinatariosDoDisparo(req DisparoConviteRequest, treinamento models.Treinamento) ([]ConviteDestinatario, error) {
+	if len(req.Destinatarios) > 0 {
+		resolved := make([]ConviteDestinatario, 0, len(req.Destinatarios))
+		for _, destinatario := range req.Destinatarios {
+			item := destinatario
+			if strings.TrimSpace(item.Email) == "" && strings.TrimSpace(item.Nome) != "" {
+				if email, err := repositories.BuscarEmailLojaPorNome(item.Nome); err == nil {
+					item.Email = email
+				}
+			}
+
+			if strings.TrimSpace(item.Email) == "" {
+				return nil, fmt.Errorf("destinatário sem e-mail: %s", item.Nome)
+			}
+
+			resolved = append(resolved, item)
+		}
+
+		return resolved, nil
+	}
+
+	segmentoFiltro := ""
+	switch req.Modo {
+	case "segmento_treinamento":
+		segmentoFiltro = treinamento.SegmentoAlvo
+	case "segmento_loja":
+		segmentoFiltro = req.SegmentoLoja
+	}
+
+	lojas, err := repositories.BuscarLojasComEmailPorSegmento(segmentoFiltro)
+	if err != nil {
+		return nil, err
+	}
+	if len(lojas) == 0 {
+		return nil, fmt.Errorf("nenhuma loja com e-mail encontrado para o disparo")
+	}
+
+	destinatarios := make([]ConviteDestinatario, 0, len(lojas))
+	for _, loja := range lojas {
+		destinatarios = append(destinatarios, ConviteDestinatario{
+			Nome:     loja.Nome,
+			Email:    loja.Email,
+			Segmento: loja.Segmento,
+		})
+	}
+
+	return destinatarios, nil
 }
 
 // CadastrarTreinamentoHandler recebe os dados da tela "Cadastrar Novo Treinamento"
@@ -81,27 +201,7 @@ func CadastrarTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, "Treinamento '%s' criado com sucesso! O ID para o Google Forms é: %s", novoTreinamento.Tema, idGerado)
 
-	// 6. DISPARA A GERAÇÃO DO GOOGLE FORMS E ENVIO DE E-MAIL EM SEGUNDO PLANO
-	go func(id, tema string) {
-		payload := map[string]string{
-			"treinamento_id": id,
-			"tema":           tema,
-		}
-		jsonPayload, err := json.Marshal(payload)
-		if err != nil {
-			fmt.Printf("[Automação] Erro ao serializar JSON para gerar forms: %v\n", err)
-			return
-		}
-
-		apiURL := "http://localhost:8000/api/automacoes/gerar-forms"
-		resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(jsonPayload))
-		if err != nil {
-			fmt.Printf("[Automação] Erro ao chamar endpoint de gerar forms: %v\n", err)
-			return
-		}
-		defer resp.Body.Close()
-		fmt.Printf("[Automação] Resposta do script de gerar forms: %s\n", resp.Status)
-	}(idGerado, novoTreinamento.Tema)
+	// Geração do formulário agora é manual.
 }
 
 // DeletarTreinamentoHandler remove um treinamento do banco através do ID

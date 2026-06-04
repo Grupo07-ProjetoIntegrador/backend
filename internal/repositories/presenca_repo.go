@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/Grupo07-ProjetoIntegrador/backend/internal/database"
@@ -98,4 +99,28 @@ func ConfirmarPresencaPorEmail(treinamentoID string, email string) error {
 	}
 
 	return nil
+}
+
+// BuscarNomeParticipantePorEmail retorna o nome cadastrado na presença pendente.
+func BuscarNomeParticipantePorEmail(treinamentoID string, email string) (string, error) {
+	var nome string
+
+	query := `
+		SELECT nome_participante
+		FROM presencas
+		WHERE treinamento_id = $1 AND email = $2
+		ORDER BY id DESC
+		LIMIT 1
+	`
+
+	err := database.DB.QueryRow(query, treinamentoID, email).Scan(&nome)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("participante nao encontrado para este e-mail neste treinamento")
+		}
+
+		return "", fmt.Errorf("erro ao buscar nome do participante: %v", err)
+	}
+
+	return nome, nil
 }
