@@ -71,6 +71,7 @@ func notificarPresencaValidada(treinamentoID string, email string, nomeParticipa
 	}
 
 	payload := map[string]any{
+		"treinamento_id": treinamentoID,
 		"treinamento": map[string]any{
 			"id":             treinamento.ID,
 			"tema":           treinamento.Tema,

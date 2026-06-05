@@ -26,8 +26,13 @@ func ReceberInscricaoForms(w http.ResponseWriter, r *http.Request) {
 	// 1. O código busca no banco de dados a loja ativa pelo nome selecionado no Forms.
 	lojaID, err := repositories.BuscarLojaAtivaPorNome(inscricao.NomeLoja)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Loja invalida: %v", err), http.StatusBadRequest)
-		return
+		// Se a loja não for encontrada ou inativa, faz fallback para a loja genérica "Outra Loja (Não listada)"
+		var errFallback error
+		lojaID, errFallback = repositories.BuscarOuCriarLoja("9999", "Outra Loja (Não listada)")
+		if errFallback != nil {
+			http.Error(w, fmt.Sprintf("Erro ao resolver loja de fallback: %v", errFallback), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// 2. Insere a presença na tabela 'presencas' com o status PENDENTE, incluindo as novas colunas

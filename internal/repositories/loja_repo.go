@@ -63,17 +63,28 @@ func BuscarOuCriarLoja(luc string, nome string) (string, error) {
 // BuscarLojaAtivaPorNome procura uma loja ativa pelo nome. Nao cria loja automaticamente.
 func BuscarLojaAtivaPorNome(nome string) (string, error) {
 	var lojaID string
+	var luc string
 
-	if strings.TrimSpace(nome) == "" {
+	nomeLimpo := strings.TrimSpace(nome)
+	if nomeLimpo == "" {
 		return "", fmt.Errorf("nome da loja nao informado")
 	}
 
-	queryBusca := `SELECT id FROM lojas WHERE nome = $1 AND status = true`
+	// Verifica se a loja existe pelo nome, se o LUC existe e não está vazio, e puxa o ID
+	queryBusca := `
+		SELECT id, luc 
+		FROM lojas 
+		WHERE TRIM(UPPER(nome)) = TRIM(UPPER($1)) 
+		  AND status = true 
+		  AND luc IS NOT NULL 
+		  AND TRIM(luc) <> ''
+		LIMIT 1
+	`
 
-	err := database.DB.QueryRow(queryBusca, nome).Scan(&lojaID)
+	err := database.DB.QueryRow(queryBusca, nomeLimpo).Scan(&lojaID, &luc)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", fmt.Errorf("loja nao encontrada ou inativa")
+			return "", fmt.Errorf("loja '%s' nao encontrada, inativa ou sem LUC cadastrado", nome)
 		}
 
 		return "", fmt.Errorf("erro inesperado ao buscar loja pelo nome: %v", err)

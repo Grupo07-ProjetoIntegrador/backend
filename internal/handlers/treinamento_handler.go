@@ -577,7 +577,7 @@ func RegerarFormularioTreinamentoHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	tema, err := repositories.BuscarTreinamentoTema(id)
+	treinamento, err := repositories.BuscarTreinamentoPorID(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "Treinamento não encontrado", http.StatusNotFound)
@@ -587,24 +587,49 @@ func RegerarFormularioTreinamentoHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	payload := map[string]string{
-		"treinamento_id": id,
-		"tema":           tema,
-	}
 	userID := r.URL.Query().Get("user_id")
-	if userID != "" {
-		payload["user_id"] = userID
+
+	// Payload de exclusão
+	deletePayload := map[string]any{
+		"treinamento_id": id,
 	}
-	jsonPayload, err := json.Marshal(payload)
+	if userID != "" {
+		deletePayload["user_id"] = userID
+	}
+	deleteJson, err := json.Marshal(deletePayload)
 	if err != nil {
-		http.Error(w, "Erro ao serializar payload", http.StatusInternalServerError)
+		http.Error(w, "Erro ao serializar payload de deleção", http.StatusInternalServerError)
+		return
+	}
+
+	// Payload de geração
+	generatePayload := map[string]any{
+		"treinamento_id": id,
+		"treinamento": AutomacoesTreinamentoPayload{
+			ID:            treinamento.ID,
+			Tema:          treinamento.Tema,
+			Descricao:     treinamento.Descricao,
+			Objetivo:      treinamento.Objetivo,
+			Data:          treinamento.Data,
+			HorarioInicio: treinamento.HorarioInicio,
+			HorarioFim:    treinamento.HorarioFim,
+			Local:         treinamento.Local,
+			SegmentoAlvo:  treinamento.SegmentoAlvo,
+		},
+	}
+	if userID != "" {
+		generatePayload["user_id"] = userID
+	}
+	generateJson, err := json.Marshal(generatePayload)
+	if err != nil {
+		http.Error(w, "Erro ao serializar payload de geração", http.StatusInternalServerError)
 		return
 	}
 
 	apiDeleteURL := "http://localhost:8000/api/automacoes/apagar-form"
-	deleteResp, err := http.Post(apiDeleteURL, "application/json", bytes.NewBuffer(jsonPayload))
+	deleteResp, err := http.Post(apiDeleteURL, "application/json", bytes.NewBuffer(deleteJson))
 	if err != nil {
-		http.Error(w, "Erro ao chamar automacoes", http.StatusBadGateway)
+		http.Error(w, "Erro ao chamar automacoes para apagar", http.StatusBadGateway)
 		return
 	}
 	defer deleteResp.Body.Close()
@@ -615,20 +640,20 @@ func RegerarFormularioTreinamentoHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var deletePayload map[string]any
+	var deletePayloadResponse map[string]any
 	if deleteResp.StatusCode == http.StatusOK {
 		body, _ := io.ReadAll(deleteResp.Body)
 		if len(body) > 0 {
-			if err := json.Unmarshal(body, &deletePayload); err != nil {
-				deletePayload = nil
+			if err := json.Unmarshal(body, &deletePayloadResponse); err != nil {
+				deletePayloadResponse = nil
 			}
 		}
 	}
 
 	apiGerarURL := "http://localhost:8000/api/automacoes/gerar-forms"
-	resp, err := http.Post(apiGerarURL, "application/json", bytes.NewBuffer(jsonPayload))
+	resp, err := http.Post(apiGerarURL, "application/json", bytes.NewBuffer(generateJson))
 	if err != nil {
-		http.Error(w, "Erro ao chamar automacoes", http.StatusBadGateway)
+		http.Error(w, "Erro ao chamar automacoes para gerar", http.StatusBadGateway)
 		return
 	}
 	defer resp.Body.Close()
@@ -642,11 +667,11 @@ func RegerarFormularioTreinamentoHandler(w http.ResponseWriter, r *http.Request)
 	responsePayload := map[string]any{
 		"mensagem": "Geração do formulário iniciada",
 	}
-	if deletePayload != nil {
-		if value, ok := deletePayload["drive_deleted"]; ok {
+	if deletePayloadResponse != nil {
+		if value, ok := deletePayloadResponse["drive_deleted"]; ok {
 			responsePayload["drive_deleted"] = value
 		}
-		if value, ok := deletePayload["form_id"]; ok {
+		if value, ok := deletePayloadResponse["form_id"]; ok {
 			responsePayload["form_id"] = value
 		}
 	}
