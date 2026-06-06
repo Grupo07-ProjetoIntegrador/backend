@@ -7,13 +7,47 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
+	"github.com/Grupo07-ProjetoIntegrador/backend/internal/models"
 	"github.com/Grupo07-ProjetoIntegrador/backend/internal/repositories"
 )
 
 type ConfirmarPresencaRequest struct {
 	TreinamentoID string `json:"treinamento_id"`
 	Email         string `json:"email"`
+}
+
+func ListarPresencasHandler(w http.ResponseWriter, r *http.Request) {
+	// 1. Configuração do CORS
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
+	treinamentoID := r.URL.Query().Get("treinamento_id")
+	if treinamentoID == "" {
+		http.Error(w, `{"erro": "ID do treinamento é obrigatório"}`, http.StatusBadRequest)
+		return
+	}
+
+	presencas, err := repositories.ListarPresencaPorTreinamentos(treinamentoID)
+
+	if err != nil {
+		// Se o erro for apenas porque não há linhas, tratamos como sucesso com lista vazia
+		// Você pode checar se o erro é 'sql.ErrNoRows' ou se prefere apenas zerar o erro se o seu grupo preferir
+		fmt.Printf("🚨 Erro ou aviso ao buscar no banco: %v\n", err)
+
+		// Se quiser que mesmo com erro ele não quebre o front, podemos forçar o envio de uma lista vazia:
+		presencas = []models.PresencaResponse{}
+	}
+
+	// Se a busca deu certo mas veio nula (sem registros no banco), transformamos em [] para o React não quebrar
+	if presencas == nil {
+		presencas = []models.PresencaResponse{} // Evita mandar 'null' no JSON, manda '[]'
+	}
+
+	// 3. Devolve os dados em formato JSON para o React (Sempre 200 OK se chegou aqui)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(presencas)
 }
 
 // ConfirmarPresencaHandler atende o PATCH enviado pelo checkin.html
@@ -111,4 +145,78 @@ func notificarPresencaValidada(treinamentoID string, email string, nomeParticipa
 	}
 
 	return nil
+}
+
+func CriarPresencaManualHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == http.MethodOptions {
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(w, `{"erro": "Método não permitido"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	var input models.CriarPresencaInput
+
+	err := json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		http.Error(w, `{"erro": "JSON inválido"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Validação dos campos obrigatórios
+	if input.TreinamentoID == "" || input.LUC == "" || input.Representante == "" {
+		http.Error(w, `{"erro": "Todos os campos são obrigatórios"}`, http.StatusBadRequest)
+		return
+	}
+
+	input.Status = strings.ToUpper(input.Status)
+
+	// Chama a função do repositório enviando os dados validados
+	err = repositories.CriarPresencaManual(input.TreinamentoID, input.LUC, input.Representante, input.Status)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"erro": err.Error()})
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"mensagem": "Participante adicionado com sucesso!"})
+}
+
+func DeletarPresencaHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == http.MethodOptions {
+		return
+	}
+
+	// Aceita apenas o método DELETE
+	if r.Method != http.MethodDelete {
+		http.Error(w, `{"erro": "Método não permitido"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Pega o ID dos parâmetros da URL (?id=...)
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, `{"erro": "O parâmetro ID é obrigatório"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Chama a função do repositório para deletar do banco
+	err := repositories.DeletarPresenca(id)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"erro": err.Error()})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"mensagem": "Presença removida com sucesso!"})
 }

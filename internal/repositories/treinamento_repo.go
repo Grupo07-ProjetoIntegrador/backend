@@ -84,7 +84,7 @@ func InserirTreinamento(t models.Treinamento) (string, error) {
 func ListarTreinamentos() ([]models.TreinamentoResumo, error) {
 	//Começando Montando a query para selecionar as informações do banco de dados
 	query := `
-		SELECT id, tema, segmento_alvo, horario_inicio, conteudo, status
+		SELECT id, tema, segmento_alvo, horario_inicio, conteudo, status, capacidade_maxima
 		FROM treinamentos
 		ORDER BY horario_inicio DESC
 	`
@@ -106,7 +106,7 @@ func ListarTreinamentos() ([]models.TreinamentoResumo, error) {
 
 		var dataHoraBanco time.Time
 
-		err := linhas.Scan(&t.ID, &t.Tema, &t.Segmento, &dataHoraBanco, &t.Conteudo, &t.Status)
+		err := linhas.Scan(&t.ID, &t.Tema, &t.Segmento, &dataHoraBanco, &t.Conteudo, &t.Status, &t.CapacidadeMaxima)
 
 		if err != nil {
 			return nil, fmt.Errorf("erro ao ler os dados da linha: %v", err)

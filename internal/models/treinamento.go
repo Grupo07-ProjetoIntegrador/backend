@@ -27,12 +27,13 @@ type Treinamento struct {
 }
 
 type TreinamentoResumo struct {
-	ID            string `json:"id"`
-	Tema          string `json:"tema"`
-	Segmento      string `json:"segmento"`
-	Data          string `json:"data"`
-	DataHora      string `json:"data_hora"`
-	HorarioInicio string `json:"horario_inicio"`
-	Conteudo      string `json:"conteudo"`
-	Status        string `json:"status"`
+	ID               string `json:"id"`
+	Tema             string `json:"tema"`
+	Segmento         string `json:"segmento"`
+	Data             string `json:"data"`
+	DataHora         string `json:"data_hora"`
+	HorarioInicio    string `json:"horario_inicio"`
+	Conteudo         string `json:"conteudo"`
+	Status           string `json:"status"`
+	CapacidadeMaxima int    `json:"capacidade_maxima"`
 }

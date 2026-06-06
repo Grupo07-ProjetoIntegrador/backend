@@ -27,7 +27,7 @@ func ConfigurarRotas() {
 
 	http.HandleFunc("/api/treinamentos", ListarTreinamentosHandler)
 
-	// Rota para gerar formulario manualmente
+	//Rota para gerar formulario manualmente
 	http.HandleFunc("/api/treinamentos/gerar-formulario", GerarFormularioTreinamentoHandler)
 
 	// Rota para buscar link do formulario
@@ -50,4 +50,16 @@ func ConfigurarRotas() {
 	http.HandleFunc("/api/oauth/google/callback", GoogleOAuthCallbackHandler)
 	http.HandleFunc("/api/oauth/google/status", GoogleOAuthStatusHandler)
 	http.HandleFunc("/api/oauth/google/disconnect", GoogleOAuthDisconnectHandler)
+
+	//Rota para uploado de planilha
+	http.HandleFunc("/api/treinamentos/upload", UploadPlanilhaHandler)
+
+	//Rota para listas as presenças em cada treinamento
+	http.HandleFunc("/api/treinamentos/presencas", ListarPresencasHandler)
+
+	//Rota para adicionar manualmente representante
+	http.HandleFunc("/api/treinamentos/presencas/manual", CriarPresencaManualHandler)
+	//Rota para deletar uma presença
+	http.HandleFunc("/api/treinamentos/presencas/deletar", DeletarPresencaHandler)
+
 }
