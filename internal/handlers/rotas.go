@@ -22,19 +22,19 @@ func ConfigurarRotas() {
 	http.HandleFunc("/api/treinamentos", ListarTreinamentosHandler)
 
 	// Rota para gerar formulario manualmente
-	http.HandleFunc("/api/treinamentos/gerar-formulario", GerarFormularioTreinamentoHandler)
+	// http.HandleFunc("/api/treinamentos/gerar-formulario", GerarFormularioTreinamentoHandler)
 
-	// Rota para buscar link do formulario
-	http.HandleFunc("/api/treinamentos/formulario", BuscarFormularioTreinamentoHandler)
+	// // Rota para buscar link do formulario
+	// http.HandleFunc("/api/treinamentos/formulario", BuscarFormularioTreinamentoHandler)
 
-	// Rota para apagar link do formulario
-	http.HandleFunc("/api/treinamentos/apagar-formulario", ApagarFormularioTreinamentoHandler)
+	// // Rota para apagar link do formulario
+	// http.HandleFunc("/api/treinamentos/apagar-formulario", ApagarFormularioTreinamentoHandler)
 
-	// Rota para regerar formulario
-	http.HandleFunc("/api/treinamentos/regerar-formulario", RegerarFormularioTreinamentoHandler)
+	// // Rota para regerar formulario
+	// http.HandleFunc("/api/treinamentos/regerar-formulario", RegerarFormularioTreinamentoHandler)
 
-	// Rota para disparo segmentado de convites por e-mail
-	http.HandleFunc("/api/treinamentos/disparar-convite", DispararConviteTreinamentoHandler)
+	// // Rota para disparo segmentado de convites por e-mail
+	// http.HandleFunc("/api/treinamentos/disparar-convite", DispararConviteTreinamentoHandler)
 
 	// Rota de deletar treinamento
 	http.HandleFunc("/api/treinamentos/deletar", DeletarTreinamentoHandler)
@@ -47,5 +47,8 @@ func ConfigurarRotas() {
 
 	//Rota para uploado de planilha
 	http.HandleFunc("/api/treinamentos/upload", UploadPlanilhaHandler)
+
+	//Rota para listas as presenças em cada treinamento
+	http.HandleFunc("/api/treinamentos/presencas", ListarPresencasHandler)
 
 }

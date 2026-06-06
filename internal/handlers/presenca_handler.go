@@ -16,6 +16,31 @@ type ConfirmarPresencaRequest struct {
 	Email         string `json:"email"`
 }
 
+func ListarPresencasHandler(w http.ResponseWriter, r *http.Request) {
+	// 1. Configuração do CORS
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
+	treinamentoID := r.URL.Query().Get("treinamento_id")
+	if treinamentoID == "" {
+		http.Error(w, `{"erro": "ID do treinamento é obrigatório"}`, http.StatusBadRequest)
+		return
+	}
+
+	// 2. Busca no repositório
+	presencas, err := repositories.ListarPresencaPorTreinamentos(treinamentoID)
+
+	if err != nil {
+		fmt.Printf("🚨 ERRO REAL AO BUSCAR NO BANCO: %v\n", err)
+		http.Error(w, `{"erro": "Erro ao buscar presenças"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// 3. Devolve os dados em formato JSON para o React
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(presencas)
+}
+
 // ConfirmarPresencaHandler atende o PATCH enviado pelo checkin.html
 func ConfirmarPresencaHandler(w http.ResponseWriter, r *http.Request) {
 	// CORS Headers - Permite que a página HTML executada no celular faça chamadas para esta API

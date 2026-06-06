@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Grupo07-ProjetoIntegrador/backend/internal/database"
+	"github.com/Grupo07-ProjetoIntegrador/backend/internal/models"
 )
 
 // InserirPresencaPendente salva a inscrição vinda do Forms com o status inicial 'PENDENTE'
@@ -75,6 +76,44 @@ func SalvarPresencaPlanilha(treinamentoID string, luc string, nomeParticipante s
 
 	return nil
 } // <- Chave de fechamento que estava faltando!
+
+func ListarPresencaPorTreinamentos(treinamentoID string) ([]models.PresencaResponse, error) {
+	var presencas []models.PresencaResponse
+
+	query := `
+			SELECT p.id, l.luc, l.nome, p.nome_participante, p.status_presenca
+			FROM presencas p
+			INNER JOIN lojas l ON p.loja_id = l.id
+			WHERE p.treinamento_id = $1
+			ORDER BY p.data_registro DESC
+	`
+
+	rows, err := database.DB.Query(query, treinamentoID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var p models.PresencaResponse
+		err := rows.Scan(&p.ID, &p.LUC, &p.Loja, &p.Representante, &p.Status)
+		if err != nil {
+			continue
+		}
+
+		presencas = append(presencas, p)
+
+	}
+
+	if presencas == nil {
+		presencas = []models.PresencaResponse{}
+	}
+
+	return presencas, nil
+
+}
 
 // ConfirmarPresencaPorEmail atualiza o status_presenca de 'PENDENTE' para 'PRESENTE'
 // buscando pela combinação de treinamento_id e email que esteja com status 'PENDENTE'. (Mantido do seu código)
