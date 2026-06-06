@@ -21,20 +21,20 @@ func ConfigurarRotas() {
 	// Rota de listar os treinamentos
 	http.HandleFunc("/api/treinamentos", ListarTreinamentosHandler)
 
-	// Rota para gerar formulario manualmente
-	// http.HandleFunc("/api/treinamentos/gerar-formulario", GerarFormularioTreinamentoHandler)
+	//Rota para gerar formulario manualmente
+	http.HandleFunc("/api/treinamentos/gerar-formulario", GerarFormularioTreinamentoHandler)
 
-	// // Rota para buscar link do formulario
-	// http.HandleFunc("/api/treinamentos/formulario", BuscarFormularioTreinamentoHandler)
+	// Rota para buscar link do formulario
+	http.HandleFunc("/api/treinamentos/formulario", BuscarFormularioTreinamentoHandler)
 
-	// // Rota para apagar link do formulario
-	// http.HandleFunc("/api/treinamentos/apagar-formulario", ApagarFormularioTreinamentoHandler)
+	// Rota para apagar link do formulario
+	http.HandleFunc("/api/treinamentos/apagar-formulario", ApagarFormularioTreinamentoHandler)
 
-	// // Rota para regerar formulario
-	// http.HandleFunc("/api/treinamentos/regerar-formulario", RegerarFormularioTreinamentoHandler)
+	// Rota para regerar formulario
+	http.HandleFunc("/api/treinamentos/regerar-formulario", RegerarFormularioTreinamentoHandler)
 
-	// // Rota para disparo segmentado de convites por e-mail
-	// http.HandleFunc("/api/treinamentos/disparar-convite", DispararConviteTreinamentoHandler)
+	// Rota para disparo segmentado de convites por e-mail
+	http.HandleFunc("/api/treinamentos/disparar-convite", DispararConviteTreinamentoHandler)
 
 	// Rota de deletar treinamento
 	http.HandleFunc("/api/treinamentos/deletar", DeletarTreinamentoHandler)
@@ -50,5 +50,10 @@ func ConfigurarRotas() {
 
 	//Rota para listas as presenças em cada treinamento
 	http.HandleFunc("/api/treinamentos/presencas", ListarPresencasHandler)
+
+	//Rota para adicionar manualmente representante
+	http.HandleFunc("/api/treinamentos/presencas/manual", CriarPresencaManualHandler)
+	//Rota para deletar uma presença
+	http.HandleFunc("/api/treinamentos/presencas/deletar", DeletarPresencaHandler)
 
 }

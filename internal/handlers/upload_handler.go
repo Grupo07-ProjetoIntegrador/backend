@@ -98,39 +98,6 @@ func UploadPlanilhaHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	// if extensao == ".csv" {
-	// 	//codigo para ler csv
-	// 	leitor := csv.NewReader(file)
-	// 	linhas, err = leitor.ReadAll()
-
-	// 	if err != nil {
-	// 		http.Error(w, "Erro ao ler as linhas do arquivo CSV.", http.StatusInternalServerError)
-	// 		return
-	// 	}
-	// } else if extensao == ".xlsx" {
-	// 	//codigo para ler xlsx
-	// 	f, err := excelize.OpenReader(file)
-
-	// 	if err != nil {
-	// 		http.Error(w, "Erro ao ler as linhas do arquivo XLSX.", http.StatusInternalServerError)
-	// 	}
-
-	// 	defer f.Close()
-
-	// 	//Pega os dados da tabela do excel
-	// 	nomeDaAba := f.GetSheetName(f.GetActiveSheetIndex())
-	// 	linhas, err = f.GetRows(nomeDaAba)
-
-	// 	if err != nil {
-	// 		http.Error(w, "Erro ao ler as linhas do arquivo XLSX.", http.StatusInternalServerError)
-	// 		return
-	// 	}
-	// } else {
-	// 	//Trava para não aceitar arquivos de outros formatos
-	// 	http.Error(w, "Formato inválido. O sistema aceita apenas planilhas .csv ou .xlsx", http.StatusBadRequest)
-	// 	return
-	// }
-
 	//Loop para ler as linhas, tanto para csv ou xlsx
 
 	salvos := 0

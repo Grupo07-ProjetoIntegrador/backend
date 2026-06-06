@@ -34,6 +34,8 @@ func oauthConfig() (*oauth2.Config, error) {
 			"https://www.googleapis.com/auth/forms.body",
 			"https://www.googleapis.com/auth/drive",
 			"https://www.googleapis.com/auth/gmail.send",
+			"https://www.googleapis.com/auth/script.deployments",
+			"https://www.googleapis.com/auth/script.projects",
 		},
 		Endpoint: google.Endpoint,
 	}, nil

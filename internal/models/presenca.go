@@ -20,3 +20,10 @@ type PresencaResponse struct {
 	Representante string `json:"representante"`
 	Status        string `json:"status"`
 }
+
+type CriarPresencaInput struct {
+	TreinamentoID string `json:"treinamento_id"`
+	LUC           string `json:"luc"`
+	Representante string `json:"representante"`
+	Status        string `json:"status"`
+}
