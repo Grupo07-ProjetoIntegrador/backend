@@ -169,7 +169,7 @@ func UpdateTreinamento(id string, t models.Treinamento)  error {
 	dataParseada, err := time.Parse("02/01/2006", t.Data)
 
 	if err != nil {
-		return "", fmt.Errorf("erro ao converter a data para o formato dd/mm/aaaa: %v", err)
+		return fmt.Errorf("erro ao converter a data para o formato dd/mm/aaaa: %v", err)
 	}
 
 	//Formata para o padrao do banco de dados
@@ -178,7 +178,7 @@ func UpdateTreinamento(id string, t models.Treinamento)  error {
 	//Tratamento da HorarioInicio para ser aceito no banco.
 	inicioParseado, err := time.Parse("02/01/2006 15:04", t.Data+" "+t.HorarioInicio)
 	if err != nil {
-		return "", fmt.Errorf("Erro ao converter horario inicio: %v", err)
+		return fmt.Errorf("Erro ao converter horario inicio: %v", err)
 	}
 
 	horarioInicioBanco := inicioParseado.Format("2006-01-02 15:04:00")
@@ -188,7 +188,7 @@ func UpdateTreinamento(id string, t models.Treinamento)  error {
 	FimParseado, err := time.Parse("02/01/2006 15:04", t.Data+" "+t.HorarioFim)
 
 	if err != nil {
-		return "", fmt.Errorf("Erro ao converter horario fim: %v", err)
+		return fmt.Errorf("Erro ao converter horario fim: %v", err)
 	}
 
 	horarioFimBanco := FimParseado.Format("2006-01-02 15:04:00")
@@ -234,7 +234,7 @@ func UpdateTreinamento(id string, t models.Treinamento)  error {
 
 	if err != nil {
 		// Se der erro, retorna uma string vazia e o erro para o Handler
-		return "", fmt.Errorf("erro ao fazer update do treinamento: %v", err)
+		return fmt.Errorf("erro ao fazer update do treinamento: %v", err)
 	}
 	//retorna nil para o erro do handler
 	return nil
