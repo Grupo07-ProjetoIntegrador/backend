@@ -161,6 +161,95 @@ func DeletarTreinamento(id string) error {
 
 }
 
+//faz a ediçao/update de um treinamento
+func UpdateTreinamento(id string, t models.Treinamento) error {
+
+	//Tratamento(conversão do formato da data para string)
+	dataParseada, err := time.Parse("02/01/2006", t.Data)
+
+	if err != nil {
+		return fmt.Errorf("erro ao converter a data para o formato dd/mm/aaaa: %v", err)
+	}
+
+	//Formata para o padrao do banco de dados
+	dataFormatadaBanco := dataParseada.Format("2006-01-02")
+
+	//Tratamento da HorarioInicio para ser aceito no banco.
+	inicioParseado, err := time.Parse("02/01/2006 15:04", t.Data+" "+t.HorarioInicio)
+	if err != nil {
+		return fmt.Errorf("Erro ao converter horario inicio: %v", err)
+	}
+
+	horarioInicioBanco := inicioParseado.Format("2006-01-02 15:04:00")
+
+	//Tratamento do HorarioFim para ser aceito no banco de dados
+
+	FimParseado, err := time.Parse("02/01/2006 15:04", t.Data+" "+t.HorarioFim)
+
+	if err != nil {
+		return fmt.Errorf("Erro ao converter horario fim: %v", err)
+	}
+
+	horarioFimBanco := FimParseado.Format("2006-01-02 15:04:00")
+
+	//Tratamento do Status para fazer a string ficar toda Maiuscula para colocar no banco de dados
+	statusBanco := strings.ToUpper(t.Status)
+
+	//cria a query do BD com update de cada uma das colunas onde o ID é o informado
+	query := `
+		UPDATE treinamentos
+		SET
+			tema = $1, 
+			descricao = $2, 
+			categoria = $3, 
+			data = $4, 
+			horario_inicio = $5, 
+			horario_fim = $6, 
+			local = $7, 
+			modalidade = $8, 
+			conteudo = $9, 
+			capacidade_maxima = $10, 
+			segmento_alvo = $11, 
+			status = $12,
+			objetivo = $13, 
+			observacoes = $14,
+			material_apoio = $15,
+			responsavel = $16, 
+			area_responsavel = $17, 
+			tags = $18, 
+			recorrente = $19
+		WHERE id = $20
+	`
+	//executa a inserçao 'Exec' porque náo retorna nenhum valor, como o id na criaçao de um treinamento
+	resultado, err := database.DB.Exec(
+		query,
+		t.Tema, t.Descricao, t.Categoria, dataFormatadaBanco, horarioInicioBanco,
+		horarioFimBanco, t.Local, t.Modalidade, t.Conteudo,
+		t.CapacidadeMaxima, t.SegmentoAlvo, statusBanco,
+		t.Objetivo, t.Observacoes, t.MaterialApoio,
+		t.Responsavel, t.AreaResponsavel, t.Tags, t.Recorrente, id,
+	)
+
+	if err != nil {
+		// Se der erro, retorna uma string vazia e o erro para o Handler
+		return fmt.Errorf("erro ao fazer update do treinamento: %v", err)
+	}
+
+	//Rowsaffected
+	linhasAfetadas, err := resultado.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if linhasAfetadas == 0 {
+		return fmt.Errorf("Nenhum treinamento foi encontrado com esse ID")
+	}
+
+	//retorna nil para o erro do handler
+	return nil
+}
+
 // BuscarTreinamentoTema retorna o tema do treinamento pelo ID
 func BuscarTreinamentoTema(id string) (string, error) {
 	var tema string

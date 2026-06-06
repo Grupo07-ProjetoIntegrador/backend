@@ -53,6 +53,7 @@ http://localhost:8080
 * `GET /api/treinamentos`
 * `POST /api/oauth/google/start`
 * `GET /api/oauth/google/callback`
+* `PUT /api/treinamentos/editar`
 
 ## Observações para GitHub
 

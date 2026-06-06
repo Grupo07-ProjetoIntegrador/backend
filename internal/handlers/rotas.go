@@ -15,10 +15,16 @@ func ConfigurarRotas() {
 
 	http.HandleFunc("/api/treinamentos/webhook-forms", ReceberInscricaoForms)
 
+	//Update dos treinamentos
+	http.HandleFunc("/api/treinamentos/editar", UpdateTreinamentosHandler)
+
+	//Rota de listar os treinamentos
+
 	// Rota para o check-in automático (Auto-presença via QR Code)
 	http.HandleFunc("/api/presencas/confirmar", ConfirmarPresencaHandler)
 
 	// Rota de listar os treinamentos
+
 	http.HandleFunc("/api/treinamentos", ListarTreinamentosHandler)
 
 	// Rota para gerar formulario manualmente
