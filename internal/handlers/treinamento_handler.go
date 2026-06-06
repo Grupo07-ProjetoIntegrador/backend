@@ -257,7 +257,6 @@ func DeletarTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"mensagem": "Treinamento deletado com sucesso!"}`))
 }
 
-
 func UpdateTreinamentosHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPut {
@@ -265,8 +264,12 @@ func UpdateTreinamentosHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//id do treinamento existente 
+	//id do treinamento existente
 	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "O id do treinamento é obrigatório", http.StatusBadRequest)
+		return
+	}
 
 	//passa os dados do treinamento que quer modificar
 	var UpdateTreinamento models.Treinamento
@@ -274,15 +277,24 @@ func UpdateTreinamentosHandler(w http.ResponseWriter, r *http.Request) {
 	//faz a leitura do JSON e retorna um erro caso haja
 	err := json.NewDecoder(r.Body).Decode(&UpdateTreinamento)
 	if err != nil {
-		http.Error(w, "Erro ao fazer o update da ediçao", http.StatusInternalServerError)
+		http.Error(w, "Erro ao fazer o update da ediçao", http.StatusBadRequest)
 		return
 	}
 
-	//manda o id e o treinamento para a 
+	//manda o id e o treinamento para a
 	err = repositories.UpdateTreinamento(id, UpdateTreinamento)
 
 	if err != nil {
+		fmt.Println("Erro ao update do treinamento", err)
 		http.Error(w, "Erro ao fazer Upload", http.StatusInternalServerError)
+		return
+	}
+
+	//Resposta
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"mensagem": "Treinamento editado com sucesso!"}`))
+}
 
 // GerarFormularioTreinamentoHandler dispara a geracao manual do Google Forms
 func GerarFormularioTreinamentoHandler(w http.ResponseWriter, r *http.Request) {

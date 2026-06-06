@@ -161,9 +161,8 @@ func DeletarTreinamento(id string) error {
 
 }
 
-
 //faz a ediçao/update de um treinamento
-func UpdateTreinamento(id string, t models.Treinamento)  error {
+func UpdateTreinamento(id string, t models.Treinamento) error {
 
 	//Tratamento(conversão do formato da data para string)
 	dataParseada, err := time.Parse("02/01/2006", t.Data)
@@ -196,7 +195,6 @@ func UpdateTreinamento(id string, t models.Treinamento)  error {
 	//Tratamento do Status para fazer a string ficar toda Maiuscula para colocar no banco de dados
 	statusBanco := strings.ToUpper(t.Status)
 
-
 	//cria a query do BD com update de cada uma das colunas onde o ID é o informado
 	query := `
 		UPDATE treinamentos
@@ -223,7 +221,7 @@ func UpdateTreinamento(id string, t models.Treinamento)  error {
 		WHERE id = $20
 	`
 	//executa a inserçao 'Exec' porque náo retorna nenhum valor, como o id na criaçao de um treinamento
-	_, err = database.DB.Exec(
+	resultado, err := database.DB.Exec(
 		query,
 		t.Tema, t.Descricao, t.Categoria, dataFormatadaBanco, horarioInicioBanco,
 		horarioFimBanco, t.Local, t.Modalidade, t.Conteudo,
@@ -236,6 +234,18 @@ func UpdateTreinamento(id string, t models.Treinamento)  error {
 		// Se der erro, retorna uma string vazia e o erro para o Handler
 		return fmt.Errorf("erro ao fazer update do treinamento: %v", err)
 	}
+
+	//Rowsaffected
+	linhasAfetadas, err := resultado.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if linhasAfetadas == 0 {
+		return fmt.Errorf("Nenhum treinamento foi encontrado com esse ID")
+	}
+
 	//retorna nil para o erro do handler
 	return nil
 }
@@ -394,4 +404,3 @@ func BuscarFormularioTreinamento(id string) (string, string, error) {
 // 	return treinamentos, nil
 // >>>>>>> automacoes-python
 // }
-
