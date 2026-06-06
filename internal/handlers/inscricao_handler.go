@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Grupo07-ProjetoIntegrador/backend/internal/models"
-	//"github.com/Grupo07-ProjetoIntegrador/backend/internal/repositories"
+	"github.com/Grupo07-ProjetoIntegrador/backend/internal/repositories"
 )
 
 // ReceberInscricaoForms atende o POST automático vindo do Google Forms
@@ -23,16 +23,32 @@ func ReceberInscricaoForms(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// LÓGICA DE NEGÓCIO A SER IMPLEMENTADA:
+	// 1. O código busca no banco de dados a loja ativa pelo nome selecionado no Forms.
+	lojaID, err := repositories.BuscarLojaAtivaPorNome(inscricao.NomeLoja)
+	if err != nil {
+		// Se a loja não for encontrada ou inativa, faz fallback para a loja genérica "Outra Loja (Não listada)"
+		var errFallback error
+		lojaID, errFallback = repositories.BuscarOuCriarLoja("9999", "Outra Loja (Não listada)")
+		if errFallback != nil {
+			http.Error(w, fmt.Sprintf("Erro ao resolver loja de fallback: %v", errFallback), http.StatusInternalServerError)
+			return
+		}
+	}
 
-	// 1. O código vai buscar no banco de dados se a loja com o 'inscricao.LUC' já existe.
-	// Se não existir, ele cria silenciosamente usando o InserirLoja() que fizemos antes.
-
-	// 2. O código vai inserir a presença na tabela 'presencas'.
-	// Lembra do nosso SQL? O status_presenca tem o padrão PENDENTE [4].
-	// query := `INSERT INTO presencas (treinamento_id, loja_id, nome_participante, status_presenca)
-	//           VALUES ($1, $2, $3, 'PENDENTE')`
+	// 2. Insere a presença na tabela 'presencas' com o status PENDENTE, incluindo as novas colunas
+	err = repositories.InserirPresencaPendente(
+		inscricao.TreinamentoID,
+		lojaID,
+		inscricao.NomeRepresentante,
+		inscricao.Email,
+		inscricao.Telefone,
+		inscricao.Cargo,
+	)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Erro ao registrar presença pendente: %v", err), http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintf(w, "Inscrição da loja %s recebida com sucesso. Status: PENDENTE", inscricao.NomeLoja)
+	fmt.Fprintf(w, "Inscrição de '%s' (Loja: %s) recebida com sucesso. Status: PENDENTE", inscricao.NomeRepresentante, inscricao.NomeLoja)
 }

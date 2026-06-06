@@ -11,6 +11,15 @@ import (
 
 // Função que atende a requisição para cadastrar a loja
 func CadastrarLojaHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	//1 - Verifica se o metodo HTTP É POST
 	if r.Method != http.MethodPost {
 		http.Error(w, "Método não permitido. Use o Post.", http.StatusMethodNotAllowed)
@@ -42,6 +51,35 @@ func CadastrarLojaHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 
-	fmt.Fprint(w, "A loja '%s' (LUC: '%s') do segmento '%s' foi processada usando model oficial!", novaLoja.Nome, novaLoja.LUC, novaLoja.Segmento)
+	fmt.Fprintf(w, "A loja '%s' (LUC: '%s') do segmento '%s' foi processada usando model oficial!", novaLoja.Nome, novaLoja.LUC, novaLoja.Segmento)
 
+}
+
+// ListarLojasHandler retorna lojas ativas com e-mail, opcionalmente filtrando por segmento
+func ListarLojasHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Método não permitido. Use GET.", http.StatusMethodNotAllowed)
+		return
+	}
+
+	segmento := r.URL.Query().Get("segmento")
+
+	lojas, err := repositories.BuscarLojasComEmailPorSegmento(segmento)
+	if err != nil {
+		http.Error(w, "Erro ao listar lojas: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(lojas)
 }
