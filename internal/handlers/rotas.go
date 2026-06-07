@@ -20,6 +20,9 @@ func ConfigurarRotas() {
 
 	// Rota para o check-in automático (Auto-presença via QR Code)
 	http.HandleFunc("/api/presencas/confirmar", ConfirmarPresencaHandler)
+	http.HandleFunc("/api/treinamentos/geofencing", ObterGeofencingTreinamentoHandler)
+	http.HandleFunc("/api/locais/cadastrar", CadastrarLocalHandler)
+	http.HandleFunc("/api/locais", ListarLocaisHandler)
 
 	// Rota de listar os treinamentos
 
@@ -60,7 +63,11 @@ func ConfigurarRotas() {
 	//Rota para deletar uma presença
 	http.HandleFunc("/api/treinamentos/presencas/deletar", DeletarPresencaHandler)
 
+	// Rotas para relatórios em PDF
+	http.HandleFunc("/api/relatorios/loja/dossie", GerarDossieLojaHandler)
+	http.HandleFunc("/api/relatorios/treinamento/chamada", GerarChamadaTreinamentoHandler)
 	//Rota para o dashboard
 	http.HandleFunc("/api/treinamentos/dashboard", DashboardStatsHandler)
 
 }
+
