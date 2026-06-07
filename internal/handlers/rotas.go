@@ -65,4 +65,8 @@ func ConfigurarRotas() {
 	//Rota para deletar uma presença
 	http.HandleFunc("/api/treinamentos/presencas/deletar", DeletarPresencaHandler)
 
+	// Rotas para relatórios em PDF
+	http.HandleFunc("/api/relatorios/loja/dossie", GerarDossieLojaHandler)
+	http.HandleFunc("/api/relatorios/treinamento/chamada", GerarChamadaTreinamentoHandler)
 }
+
