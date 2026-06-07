@@ -18,8 +18,6 @@ func ConfigurarRotas() {
 	//Update dos treinamentos
 	http.HandleFunc("/api/treinamentos/editar", UpdateTreinamentosHandler)
 
-	//Rota de listar os treinamentos
-
 	// Rota para o check-in automático (Auto-presença via QR Code)
 	http.HandleFunc("/api/presencas/confirmar", ConfirmarPresencaHandler)
 
@@ -54,12 +52,15 @@ func ConfigurarRotas() {
 	//Rota para uploado de planilha
 	http.HandleFunc("/api/treinamentos/upload", UploadPlanilhaHandler)
 
-	//Rota para listas as presenças em cada treinamento
+	//Rota para listar as presenças em cada treinamento
 	http.HandleFunc("/api/treinamentos/presencas", ListarPresencasHandler)
 
 	//Rota para adicionar manualmente representante
 	http.HandleFunc("/api/treinamentos/presencas/manual", CriarPresencaManualHandler)
 	//Rota para deletar uma presença
 	http.HandleFunc("/api/treinamentos/presencas/deletar", DeletarPresencaHandler)
+
+	//Rota para o dashboard
+	http.HandleFunc("/api/treinamentos/dashboard", DashboardStatsHandler)
 
 }
