@@ -34,8 +34,8 @@ func oauthConfig() (*oauth2.Config, error) {
 			"https://www.googleapis.com/auth/forms.body",
 			"https://www.googleapis.com/auth/drive",
 			"https://www.googleapis.com/auth/gmail.send",
-			"https://www.googleapis.com/auth/script.deployments",
-			"https://www.googleapis.com/auth/script.projects",
+			// 🚫 Removidos os escopos de script.deployments e script.projects
+			// para blindar a autenticação contra bloqueios e simplificar a tela de consentimento.
 		},
 		Endpoint: google.Endpoint,
 	}, nil
@@ -209,14 +209,14 @@ func GoogleOAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	scopes := strings.Join(config.Scopes, " ")
 	_, err = database.DB.Exec(
 		`INSERT INTO google_oauth_tokens (user_id, access_token, refresh_token, token_type, scope, expires_at)
-		 VALUES ($1, $2, $3, $4, $5, $6)
-		 ON CONFLICT (user_id) DO UPDATE SET
-		 access_token = EXCLUDED.access_token,
-		 refresh_token = COALESCE(NULLIF(EXCLUDED.refresh_token, ''), google_oauth_tokens.refresh_token),
-		 token_type = EXCLUDED.token_type,
-		 scope = EXCLUDED.scope,
-		 expires_at = EXCLUDED.expires_at,
-		 updated_at = NOW()`,
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (user_id) DO UPDATE SET
+         access_token = EXCLUDED.access_token,
+         refresh_token = COALESCE(NULLIF(EXCLUDED.refresh_token, ''), google_oauth_tokens.refresh_token),
+         token_type = EXCLUDED.token_type,
+         scope = EXCLUDED.scope,
+         expires_at = EXCLUDED.expires_at,
+         updated_at = NOW()`,
 		userID,
 		token.AccessToken,
 		token.RefreshToken,

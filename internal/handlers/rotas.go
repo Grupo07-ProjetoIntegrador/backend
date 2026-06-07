@@ -22,6 +22,9 @@ func ConfigurarRotas() {
 
 	// Rota para o check-in automático (Auto-presença via QR Code)
 	http.HandleFunc("/api/presencas/confirmar", ConfirmarPresencaHandler)
+	http.HandleFunc("/api/treinamentos/geofencing", ObterGeofencingTreinamentoHandler)
+	http.HandleFunc("/api/locais/cadastrar", CadastrarLocalHandler)
+	http.HandleFunc("/api/locais", ListarLocaisHandler)
 
 	// Rota de listar os treinamentos
 
