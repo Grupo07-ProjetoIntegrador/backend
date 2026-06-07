@@ -49,6 +49,12 @@ func InserirTreinamento(t models.Treinamento) (string, error) {
 	//Tratamento do Status para fazer a string ficar toda Maiuscula para colocar no banco de dados
 	statusBanco := strings.ToUpper(t.Status)
 
+	var localID sql.NullString
+	if t.LocalID != "" {
+		localID.String = t.LocalID
+		localID.Valid = true
+	}
+
 	// O 'RETURNING id' no final é o segredo para o banco devolver o UUID criado na mesma hora.
 	query := `
 		INSERT INTO treinamentos (
@@ -56,9 +62,9 @@ func InserirTreinamento(t models.Treinamento) (string, error) {
 			horario_fim, local, modalidade, conteudo, 
 			capacidade_maxima, segmento_alvo, status,
 			objetivo, observacoes, material_apoio,
-			responsavel, area_responsavel, tags, recorrente
+			responsavel, area_responsavel, tags, recorrente, local_id
 		) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
 		RETURNING id
 	`
 
@@ -69,7 +75,7 @@ func InserirTreinamento(t models.Treinamento) (string, error) {
 		horarioFimBanco, t.Local, t.Modalidade, t.Conteudo,
 		t.CapacidadeMaxima, t.SegmentoAlvo, statusBanco,
 		t.Objetivo, t.Observacoes, t.MaterialApoio,
-		t.Responsavel, t.AreaResponsavel, t.Tags, t.Recorrente,
+		t.Responsavel, t.AreaResponsavel, t.Tags, t.Recorrente, localID,
 	).Scan(&idGerado)
 
 	if err != nil {
@@ -269,28 +275,30 @@ func BuscarTreinamentoPorID(id string) (models.Treinamento, error) {
 
 	query := `
 		SELECT
-			COALESCE(id::text, ''),
-			COALESCE(tema, ''),
-			COALESCE(descricao, ''),
-			COALESCE(categoria, ''),
-			COALESCE(TO_CHAR(data, 'YYYY-MM-DD'), ''),
-			COALESCE(TO_CHAR(horario_inicio, 'HH24:MI'), ''),
-			COALESCE(TO_CHAR(horario_fim, 'HH24:MI'), ''),
-			COALESCE(local, ''),
-			COALESCE(modalidade, ''),
-			COALESCE(conteudo, ''),
-			COALESCE(capacidade_maxima, 0),
-			COALESCE(segmento_alvo, ''),
-			COALESCE(status::text, ''),
-			COALESCE(objetivo, ''),
-			COALESCE(observacoes, ''),
-			COALESCE(material_apoio, ''),
-			COALESCE(responsavel, ''),
-			COALESCE(area_responsavel, ''),
-			COALESCE(tags, ''),
-			COALESCE(recorrente, false)
-		FROM treinamentos
-		WHERE id = $1
+			COALESCE(t.id::text, ''),
+			COALESCE(t.tema, ''),
+			COALESCE(t.descricao, ''),
+			COALESCE(t.categoria, ''),
+			COALESCE(TO_CHAR(t.data, 'YYYY-MM-DD'), ''),
+			COALESCE(TO_CHAR(t.horario_inicio, 'HH24:MI'), ''),
+			COALESCE(TO_CHAR(t.horario_fim, 'HH24:MI'), ''),
+			COALESCE(lt.nome_local, t.local, ''),
+			COALESCE(t.modalidade, ''),
+			COALESCE(t.conteudo, ''),
+			COALESCE(t.capacidade_maxima, 0),
+			COALESCE(t.segmento_alvo, ''),
+			COALESCE(t.status::text, ''),
+			COALESCE(t.objetivo, ''),
+			COALESCE(t.observacoes, ''),
+			COALESCE(t.material_apoio, ''),
+			COALESCE(t.responsavel, ''),
+			COALESCE(t.area_responsavel, ''),
+			COALESCE(t.tags, ''),
+			COALESCE(t.recorrente, false),
+			COALESCE(t.local_id::text, '')
+		FROM treinamentos t
+		LEFT JOIN locais_treinamento lt ON t.local_id = lt.id
+		WHERE t.id = $1
 		LIMIT 1
 	`
 
@@ -315,6 +323,7 @@ func BuscarTreinamentoPorID(id string) (models.Treinamento, error) {
 		&t.AreaResponsavel,
 		&t.Tags,
 		&t.Recorrente,
+		&t.LocalID,
 	)
 	if err != nil {
 		return models.Treinamento{}, err
