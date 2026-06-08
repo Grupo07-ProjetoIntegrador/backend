@@ -27,12 +27,25 @@ type Treinamento struct {
 }
 
 type TreinamentoResumo struct {
-	ID            string `json:"id"`
-	Tema          string `json:"tema"`
-	Segmento      string `json:"segmento"`
-	Data          string `json:"data"`
-	DataHora      string `json:"data_hora"`
-	HorarioInicio string `json:"horario_inicio"`
-	Conteudo      string `json:"conteudo"`
-	Status        string `json:"status"`
+	ID               string `json:"id"`
+	Tema             string `json:"tema"`
+	Segmento         string `json:"segmento"`
+	Data             string `json:"data"`
+	DataHora         string `json:"data_hora"`
+	HorarioInicio    string `json:"horario_inicio"`
+	HorarioFim       string `json:"horario_fim"`
+	Conteudo         string `json:"conteudo"`
+	Status           string `json:"status"`
+	Descricao        string `json:"descricao"`
+	Categoria        string `json:"categoria"`
+	Local            string `json:"local"`
+	Modalidade       string `json:"modalidade"`
+	CapacidadeMaxima int    `json:"capacidade_maxima"`
+	Objetivo         string `json:"objetivo"`
+	Observacoes      string `json:"observacoes"`
+	MaterialApoio    string `json:"material_apoio"`
+	Responsavel      string `json:"responsavel"`
+	AreaResponsavel  string `json:"area_responsavel"`
+	Tags             string `json:"tags"`
+	Recorrente       bool   `json:"recorrente"`
 }

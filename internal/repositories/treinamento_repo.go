@@ -84,7 +84,26 @@ func InserirTreinamento(t models.Treinamento) (string, error) {
 func ListarTreinamentos() ([]models.TreinamentoResumo, error) {
 	//Começando Montando a query para selecionar as informações do banco de dados
 	query := `
-		SELECT id, tema, segmento_alvo, horario_inicio, conteudo, status
+		SELECT
+			COALESCE(id::text, ''),
+			COALESCE(tema, ''),
+			COALESCE(descricao, ''),
+			COALESCE(categoria, ''),
+			horario_inicio,
+			COALESCE(TO_CHAR(horario_fim, 'HH24:MI'), ''),
+			COALESCE(local, ''),
+			COALESCE(modalidade, ''),
+			COALESCE(conteudo, ''),
+			COALESCE(capacidade_maxima, 0),
+			COALESCE(segmento_alvo, ''),
+			COALESCE(status::text, ''),
+			COALESCE(objetivo, ''),
+			COALESCE(observacoes, ''),
+			COALESCE(material_apoio, ''),
+			COALESCE(responsavel, ''),
+			COALESCE(area_responsavel, ''),
+			COALESCE(tags, ''),
+			COALESCE(recorrente, false)
 		FROM treinamentos
 		ORDER BY horario_inicio DESC
 	`
@@ -106,7 +125,27 @@ func ListarTreinamentos() ([]models.TreinamentoResumo, error) {
 
 		var dataHoraBanco time.Time
 
-		err := linhas.Scan(&t.ID, &t.Tema, &t.Segmento, &dataHoraBanco, &t.Conteudo, &t.Status)
+		err := linhas.Scan(
+			&t.ID,
+			&t.Tema,
+			&t.Descricao,
+			&t.Categoria,
+			&dataHoraBanco,
+			&t.HorarioFim,
+			&t.Local,
+			&t.Modalidade,
+			&t.Conteudo,
+			&t.CapacidadeMaxima,
+			&t.Segmento,
+			&t.Status,
+			&t.Objetivo,
+			&t.Observacoes,
+			&t.MaterialApoio,
+			&t.Responsavel,
+			&t.AreaResponsavel,
+			&t.Tags,
+			&t.Recorrente,
+		)
 
 		if err != nil {
 			return nil, fmt.Errorf("erro ao ler os dados da linha: %v", err)
@@ -161,7 +200,7 @@ func DeletarTreinamento(id string) error {
 
 }
 
-//faz a ediçao/update de um treinamento
+// faz a ediçao/update de um treinamento
 func UpdateTreinamento(id string, t models.Treinamento) error {
 
 	//Tratamento(conversão do formato da data para string)
