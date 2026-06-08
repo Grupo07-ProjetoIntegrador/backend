@@ -9,6 +9,8 @@ func ConfigurarRotas() {
 	http.HandleFunc("/api/lojas/cadastrar", CadastrarLojaHandler)
 	// Rota para buscar lojas com métricas por período (Explorador de Lojas)
 	http.HandleFunc("/api/lojas/explorador", ExploradorLojasHandler)
+	// Rota para buscar histórico de treinamentos de uma loja específica
+	http.HandleFunc("/api/lojas/historico", HistoricoLojaHandler)
 	// Rota para listar lojas (com filtro por segmento)
 	http.HandleFunc("/api/lojas", ListarLojasHandler)
 
