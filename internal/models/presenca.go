@@ -12,3 +12,18 @@ type Presenca struct {
 	Cargo            string `json:"cargo"`             // varchar
 	DataRegistro     string `json:"data_registro"`     // timestamp
 }
+
+type PresencaResponse struct {
+	ID            string `json:"id"`
+	LUC           string `json:"luc"`
+	Loja          string `json:"loja"`
+	Representante string `json:"representante"`
+	Status        string `json:"status"`
+}
+
+type CriarPresencaInput struct {
+	TreinamentoID string `json:"treinamento_id"`
+	LUC           string `json:"luc"`
+	Representante string `json:"representante"`
+	Status        string `json:"status"`
+}

@@ -24,6 +24,7 @@ type Treinamento struct {
 	AreaResponsavel string `json:"area_responsavel"`
 	Tags            string `json:"tags"`
 	Recorrente      bool   `json:"recorrente"`
+	LocalID         string `json:"local_id"`
 }
 
 type TreinamentoResumo struct {

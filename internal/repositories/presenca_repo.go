@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Grupo07-ProjetoIntegrador/backend/internal/database"
+	"github.com/Grupo07-ProjetoIntegrador/backend/internal/models"
 )
 
 // InserirPresencaPendente salva a inscrição vinda do Forms com o status inicial 'PENDENTE'
@@ -76,6 +77,38 @@ func SalvarPresencaPlanilha(treinamentoID string, luc string, nomeParticipante s
 	return nil
 } // <- Chave de fechamento que estava faltando!
 
+func ListarPresencaPorTreinamentos(treinamentoID string) ([]models.PresencaResponse, error) {
+
+	presencas := []models.PresencaResponse{}
+
+	query := `
+            SELECT p.id, l.luc, l.nome, p.nome_participante, p.status_presenca
+            FROM presencas p
+            INNER JOIN lojas l ON p.loja_id = l.id
+            WHERE p.treinamento_id = $1
+            ORDER BY p.data_registro DESC
+    `
+
+	rows, err := database.DB.Query(query, treinamentoID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var p models.PresencaResponse
+		err := rows.Scan(&p.ID, &p.LUC, &p.Loja, &p.Representante, &p.Status)
+		if err != nil {
+			continue
+		}
+		presencas = append(presencas, p)
+	}
+
+	// Removemos aquela checagem "if presencas == nil" do final porque ela não é mais necessária!
+
+	return presencas, nil
+}
+
 // ConfirmarPresencaPorEmail atualiza o status_presenca de 'PENDENTE' para 'PRESENTE'
 // buscando pela combinação de treinamento_id e email que esteja com status 'PENDENTE'. (Mantido do seu código)
 func ConfirmarPresencaPorEmail(treinamentoID string, email string) error {
@@ -123,4 +156,46 @@ func BuscarNomeParticipantePorEmail(treinamentoID string, email string) (string,
 	}
 
 	return nome, nil
+}
+
+// CriarPresencaManual insere uma nova presença direto no banco de dados
+func CriarPresencaManual(treinamentoID string, luc string, nomeParticipante string, status string) error {
+	var lojaID string
+
+	// 1. Busca o ID da loja baseado no LUC enviado pelo Front
+	queryLoja := `SELECT id FROM lojas WHERE luc = $1 LIMIT 1`
+	err := database.DB.QueryRow(queryLoja, luc).Scan(&lojaID)
+	if err != nil {
+		return fmt.Errorf("loja com o LUC %s não foi encontrada no sistema", luc)
+	}
+
+	// 2. Insere o participante na tabela de presenças
+	queryPresenca := `
+		INSERT INTO presencas (treinamento_id, loja_id, nome_participante, status_presenca, data_registro)
+		VALUES ($1, $2, $3, $4, NOW())
+	`
+	_, err = database.DB.Exec(queryPresenca, treinamentoID, lojaID, nomeParticipante, status)
+	if err != nil {
+		return fmt.Errorf("erro ao inserir presença no banco: %v", err)
+	}
+
+	return nil
+}
+
+// DeletarPresenca remove um registro de presença do banco de dados pelo ID
+func DeletarPresenca(id string) error {
+	query := `DELETE FROM presencas WHERE id = $1`
+
+	result, err := database.DB.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("erro ao deletar presença do banco: %v", err)
+	}
+
+	// Verifica se alguma linha realmente foi afetada (se o ID existia)
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("nenhum registro de presença encontrado com o ID fornecido")
+	}
+
+	return nil
 }

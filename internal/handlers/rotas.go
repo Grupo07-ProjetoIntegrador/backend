@@ -18,16 +18,17 @@ func ConfigurarRotas() {
 	//Update dos treinamentos
 	http.HandleFunc("/api/treinamentos/editar", UpdateTreinamentosHandler)
 
-	//Rota de listar os treinamentos
-
 	// Rota para o check-in automático (Auto-presença via QR Code)
 	http.HandleFunc("/api/presencas/confirmar", ConfirmarPresencaHandler)
+	http.HandleFunc("/api/treinamentos/geofencing", ObterGeofencingTreinamentoHandler)
+	http.HandleFunc("/api/locais/cadastrar", CadastrarLocalHandler)
+	http.HandleFunc("/api/locais", ListarLocaisHandler)
 
 	// Rota de listar os treinamentos
 
 	http.HandleFunc("/api/treinamentos", ListarTreinamentosHandler)
 
-	// Rota para gerar formulario manualmente
+	//Rota para gerar formulario manualmente
 	http.HandleFunc("/api/treinamentos/gerar-formulario", GerarFormularioTreinamentoHandler)
 
 	// Rota para buscar link do formulario
@@ -50,4 +51,23 @@ func ConfigurarRotas() {
 	http.HandleFunc("/api/oauth/google/callback", GoogleOAuthCallbackHandler)
 	http.HandleFunc("/api/oauth/google/status", GoogleOAuthStatusHandler)
 	http.HandleFunc("/api/oauth/google/disconnect", GoogleOAuthDisconnectHandler)
+
+	//Rota para uploado de planilha
+	http.HandleFunc("/api/treinamentos/upload", UploadPlanilhaHandler)
+
+	//Rota para listar as presenças em cada treinamento
+	http.HandleFunc("/api/treinamentos/presencas", ListarPresencasHandler)
+
+	//Rota para adicionar manualmente representante
+	http.HandleFunc("/api/treinamentos/presencas/manual", CriarPresencaManualHandler)
+	//Rota para deletar uma presença
+	http.HandleFunc("/api/treinamentos/presencas/deletar", DeletarPresencaHandler)
+
+	// Rotas para relatórios em PDF
+	http.HandleFunc("/api/relatorios/loja/dossie", GerarDossieLojaHandler)
+	http.HandleFunc("/api/relatorios/treinamento/chamada", GerarChamadaTreinamentoHandler)
+	//Rota para o dashboard
+	http.HandleFunc("/api/treinamentos/dashboard", DashboardStatsHandler)
+
 }
+
