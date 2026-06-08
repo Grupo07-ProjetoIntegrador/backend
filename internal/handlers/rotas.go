@@ -7,8 +7,11 @@ import (
 func ConfigurarRotas() {
 	//Rota de Cadastro de loja
 	http.HandleFunc("/api/lojas/cadastrar", CadastrarLojaHandler)
+	// Rota para buscar lojas com métricas por período (Explorador de Lojas)
+	http.HandleFunc("/api/lojas/explorador", ExploradorLojasHandler)
 	// Rota para listar lojas (com filtro por segmento)
 	http.HandleFunc("/api/lojas", ListarLojasHandler)
+
 
 	// Quando o formulário da tela for submetido, o front-end envia para cá
 	http.HandleFunc("/api/treinamentos/cadastrar", CadastrarTreinamentoHandler)

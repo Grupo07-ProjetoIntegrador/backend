@@ -65,9 +65,11 @@ func GerarDossieLojaHandler(w http.ResponseWriter, r *http.Request) {
 			p.status_presenca
 		FROM presencas p
 		INNER JOIN treinamentos t ON p.treinamento_id = t.id
-		WHERE p.loja_id = $1 AND t.data BETWEEN $2 AND $3
+		WHERE p.loja_id = $1
+		  AND t.horario_inicio >= $2::timestamptz
+		  AND t.horario_inicio <= $3::timestamptz
 		ORDER BY t.horario_inicio DESC
-	`, lojaID, dataInicio, dataFim)
+	`, lojaID, dataInicio+"T00:00:00Z", dataFim+"T23:59:59Z")
 
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Erro ao consultar histórico de treinamentos: %v", err), http.StatusInternalServerError)
@@ -121,10 +123,11 @@ func GerarDossieLojaHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 3. Prepare payload for Python service
 	payload := map[string]any{
-		"dados_loja":             dadosLoja,
+		"dados_loja": dadosLoja,
+		// Chaves "de" e "ate" conforme esperado por gerar_pdf.py → gerar_pdf_dossie_loja()
 		"period": map[string]string{
-			"data_inicio": dataInicio,
-			"data_fim":    dataFim,
+			"de":  dataInicio,
+			"ate": dataFim,
 		},
 		"historico_treinamentos": historicoList,
 	}

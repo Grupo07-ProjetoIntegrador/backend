@@ -48,7 +48,7 @@ func ObterDadosDashboard(dataInicio, dataFim string) (models.DashboardStats, err
 		return stats, err
 	}
 
-	// 3. Total de Lojas Cadastradas Oficiais (Mantido estático)
+	// 3. Total de Lojas Cadastradas Oficiais (Total geral mantido estático)
 	queryTotalLojas := `SELECT COUNT(*) FROM lojas WHERE email IS NOT NULL AND TRIM(email) <> '' AND status = true`
 	err = database.DB.QueryRow(queryTotalLojas).Scan(&stats.TotalLojasCadastradas)
 	if err != nil {
@@ -87,7 +87,7 @@ func ObterDadosDashboard(dataInicio, dataFim string) (models.DashboardStats, err
 		WHERE p.status_presenca = 'PRESENTE' AND l.segmento <> 'Não Informado'
 		  AND t.data::date BETWEEN $1::date AND $2::date 
 		  AND t.status != 'CANCELADO'
-		GROUP l.nome
+		GROUP BY l.nome
 		ORDER BY total DESC
 		LIMIT 5
 	`
@@ -136,22 +136,26 @@ func ObterDadosDashboard(dataInicio, dataFim string) (models.DashboardStats, err
 		}
 	}
 
-	// 8. Gráfico de Evolução Mensal
+	// 8. Gráfico de Evolução Mensal (Cronológico Dinâmico para viradas de ano)
 	queryEvolucao := `
 		SELECT 
+			TO_CHAR(t.data, 'YYYY-MM') AS ano_mes,
 			TO_CHAR(t.data, 'Mon') AS mes_nome,
-			EXTRACT(MONTH FROM t.data) AS mes_num,
 			COUNT(p.id) AS total_inscritos,
-			COUNT(CASE WHEN p.status_presenca = 'PRESENTE' THEN 1 END) AS total_presentes
+			COUNT(CASE WHEN UPPER(TRIM(p.status_presenca::text)) = 'PRESENTE' THEN 1 END) AS total_presentes
 		FROM treinamentos t
 		LEFT JOIN presencas p ON t.id = p.treinamento_id
 		WHERE t.data::date BETWEEN $1::date AND $2::date 
-		  AND t.status != 'CANCELADO'
-		GROUP BY mes_nome, mes_num
-		ORDER BY mes_num ASC;
+		  AND UPPER(TRIM(t.status::text)) != 'CANCELADO'
+		GROUP BY ano_mes, mes_nome
+		ORDER BY ano_mes ASC;
 	`
 
 	rowsEvolucao, err := database.DB.Query(queryEvolucao, dataInicio, dataFim)
+	
+	// Reinicializa o array dinâmico
+	stats.EvolucaoMensal = []models.MensalStat{}
+
 	if err == nil {
 		defer rowsEvolucao.Close()
 
@@ -161,38 +165,35 @@ func ObterDadosDashboard(dataInicio, dataFim string) (models.DashboardStats, err
 			"Sep": "Set", "Oct": "Out", "Nov": "Nov", "Dec": "Dez",
 		}
 
-		ordemMeses := []string{"Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"}
-		mapaMensal := make(map[string]*models.MensalStat)
-		
-		for _, nomeMes := range ordemMeses {
-			mapaMensal[nomeMes] = &models.MensalStat{Mes: nomeMes, Inscritos: 0, Presentes: 0, Taxa: 0}
-		}
-
 		for rowsEvolucao.Next() {
-			var mesNome string
-			var mesNum, inscritos, presentes int
+			var anoMes, mesNome string
+			var inscritos, presentes int
 
-			errScan := rowsEvolucao.Scan(&mesNome, &mesNum, &inscritos, &presentes)
+			errScan := rowsEvolucao.Scan(&anoMes, &mesNome, &inscritos, &presentes)
 			if errScan == nil {
 				nomeTraduzido := mesNome
 				if brNome, ok := traducoes[mesNome]; ok {
 					nomeTraduzido = brNome
 				}
 
-				if val, ok := mapaMensal[nomeTraduzido]; ok {
-					val.Inscritos = inscritos
-					val.Presentes = presentes
-					if inscritos > 0 {
-						val.Taxa = (presentes * 100) / inscritos
-					}
+				taxa := 0
+				if inscritos > 0 {
+					taxa = (presentes * 100) / inscritos
 				}
+
+				// Alimenta o array mantendo rigorosamente a ordem sequencial temporal retornada pelo banco
+				stats.EvolucaoMensal = append(stats.EvolucaoMensal, models.MensalStat{
+					Mes:       nomeTraduzido,
+					Inscritos: inscritos,
+					Presentes: presentes,
+					Taxa:      taxa,
+				})
 			}
 		}
+	}
 
-		for _, nomeMes := range ordemMeses {
-			stats.EvolucaoMensal = append(stats.EvolucaoMensal, *mapaMensal[nomeMes])
-		}
-	} else {
+	// Fallback estrutural: Se o período customizado selecionado não tiver nenhuma linha de dados cadastrada
+	if len(stats.EvolucaoMensal) == 0 {
 		mesesPadrao := []string{"Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"}
 		for _, m := range mesesPadrao {
 			stats.EvolucaoMensal = append(stats.EvolucaoMensal, models.MensalStat{Mes: m, Taxa: 0, Inscritos: 0, Presentes: 0})
