@@ -24,7 +24,16 @@ func DashboardStatsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dados, err := repositories.ObterDadosDashboard()
+	// 1. Captura os Query Params enviados pelo React na URL (?data_inicio=...&data_fim=...)
+	dataInicio := r.URL.Query().Get("data_inicio")
+	dataFim := r.URL.Query().Get("data_fim")
+
+	// Fallbacks de segurança caso venham vazios (ex: primeiro carregamento da tela)
+	if dataInicio == "" { dataInicio = "2026-01-01" }
+	if dataFim == "" { dataFim = "2026-12-31" }
+
+	// 2. CORREÇÃO: Passa as duas datas extraídas como argumentos
+	dados, err := repositories.ObterDadosDashboard(dataInicio, dataFim)
 	if err != nil {
 		http.Error(w, fmt.Sprintf(`{"erro": "%v"}`, err), http.StatusInternalServerError)
 		return
