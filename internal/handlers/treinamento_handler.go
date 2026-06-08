@@ -250,6 +250,14 @@ func DeletarTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateTreinamentosHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "PUT, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	if r.Method != http.MethodPut {
 		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
