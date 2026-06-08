@@ -65,14 +65,32 @@ func ObterDadosDashboard() (models.DashboardStats, error) {
 		stats.MediaColabPorLoja = float64(stats.TotalParticipacoes) / float64(stats.TotalLojasImpactadas)
 	}
 
+	queryTreinamentosComPresenca := `
+		SELECT COUNT(*)
+		FROM (
+			SELECT DISTINCT p.loja_id, p.treinamento_id
+			FROM presencas p
+			INNER JOIN lojas l ON p.loja_id = l.id
+			WHERE p.status_presenca = 'PRESENTE'
+			  AND l.status = true
+			  AND l.segmento <> 'Não Informado'
+		) presencas_por_treinamento
+	`
+	err = database.DB.QueryRow(queryTreinamentosComPresenca).Scan(&stats.TotalTreinamentosComPresenca)
+	if err != nil {
+		return stats, err
+	}
+
 	// 6. Top Engajamento (Lojas oficiais mais presentes)
 	queryTop := `
-		SELECT l.nome, COUNT(p.id) as total
+		SELECT l.nome, COUNT(DISTINCT p.treinamento_id) as total
 		FROM presencas p
 		INNER JOIN lojas l ON p.loja_id = l.id
-		WHERE p.status_presenca = 'PRESENTE' AND l.segmento <> 'Não Informado'
-		GROUP BY l.nome
-		ORDER BY total DESC
+		WHERE p.status_presenca = 'PRESENTE'
+		  AND l.status = true
+		  AND l.segmento <> 'Não Informado'
+		GROUP BY l.id, l.nome
+		ORDER BY total DESC, l.nome ASC
 		LIMIT 5
 	`
 	rowsTop, err := database.DB.Query(queryTop)

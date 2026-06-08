@@ -1,14 +1,15 @@
 package models
 
 type DashboardStats struct {
-	TotalParticipacoes    int           `json:"totalParticipacoes"`
-	TotalLojasImpactadas  int           `json:"totalLojasImpactadas"`
-	TotalLojasCadastradas int           `json:"totalLojasCadastradas"`
-	TaxaPresencaMedia     int           `json:"taxaPresencaMedia"`
-	MediaColabPorLoja     float64       `json:"mediaColabPorLoja"`
-	EvolucaoMensal        []MensalStat  `json:"evolucaoMensal"`
-	TopEngajamento        []LojaRanking `json:"topEngajamento"`
-	RadarRisco            []LojaRanking `json:"radarRisco"`
+	TotalParticipacoes           int           `json:"totalParticipacoes"`
+	TotalTreinamentosComPresenca int           `json:"totalTreinamentosComPresenca"`
+	TotalLojasImpactadas         int           `json:"totalLojasImpactadas"`
+	TotalLojasCadastradas        int           `json:"totalLojasCadastradas"`
+	TaxaPresencaMedia            int           `json:"taxaPresencaMedia"`
+	MediaColabPorLoja            float64       `json:"mediaColabPorLoja"`
+	EvolucaoMensal               []MensalStat  `json:"evolucaoMensal"`
+	TopEngajamento               []LojaRanking `json:"topEngajamento"`
+	RadarRisco                   []LojaRanking `json:"radarRisco"`
 }
 
 type MensalStat struct {
