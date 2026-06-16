@@ -347,23 +347,9 @@ func GerarFormularioTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
 	if userID != "" {
 		payload["user_id"] = userID
 	}
-	jsonPayload, err := json.Marshal(payload)
+	err = repositories.EnfileirarJob("gerar_forms", payload)
 	if err != nil {
-		http.Error(w, "Erro ao serializar payload", http.StatusInternalServerError)
-		return
-	}
-
-	apiURL := automacoesBaseURL() + "/api/automacoes/gerar-forms"
-	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(jsonPayload))
-	if err != nil {
-		http.Error(w, "Erro ao chamar automacoes", http.StatusBadGateway)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(resp.Body)
-		http.Error(w, fmt.Sprintf("Erro ao gerar formulario: %s", string(body)), http.StatusBadGateway)
+		http.Error(w, "Erro ao enfileirar job no banco: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -439,37 +425,15 @@ func DispararConviteTreinamentoHandler(w http.ResponseWriter, r *http.Request) {
 		"user_id":              req.UserID,
 	}
 
-	jsonPayload, err := json.Marshal(payload)
+	err = repositories.EnfileirarJob("disparar_convites", payload)
 	if err != nil {
-		http.Error(w, "Erro ao serializar payload", http.StatusInternalServerError)
+		http.Error(w, "Erro ao enfileirar job no banco: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	apiURL := automacoesBaseURL() + "/api/automacoes/disparar-convite"
-	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(jsonPayload))
-	if err != nil {
-		http.Error(w, "Erro ao chamar automacoes", http.StatusBadGateway)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(resp.Body)
-		http.Error(w, fmt.Sprintf("Erro ao disparar convites: %s", string(body)), http.StatusBadGateway)
-		return
-	}
-
-	body, _ := io.ReadAll(resp.Body)
 	w.Header().Set("Content-Type", "application/json")
-	if len(body) > 0 {
-		w.WriteHeader(http.StatusOK)
-		w.Write(body)
-		return
-	}
-
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"mensagem": "Treinamento editado com sucesso!"}`))
-	w.Write([]byte(`{"mensagem":"Disparo de convites iniciado"}`))
+	w.Write([]byte(`{"status":"processing","mensagem":"Disparo de convites iniciado"}`))
 }
 
 // BuscarFormularioTreinamentoHandler retorna o link do formulario quando existir
@@ -564,7 +528,7 @@ func ApagarFormularioTreinamentoHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	apiURL := "http://localhost:8000/api/automacoes/apagar-form"
+	apiURL := automacoesBaseURL() + "/api/automacoes/apagar-form"
 	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		http.Error(w, "Erro ao chamar automacoes", http.StatusBadGateway)
@@ -660,13 +624,8 @@ func RegerarFormularioTreinamentoHandler(w http.ResponseWriter, r *http.Request)
 	if userID != "" {
 		generatePayload["user_id"] = userID
 	}
-	generateJson, err := json.Marshal(generatePayload)
-	if err != nil {
-		http.Error(w, "Erro ao serializar payload de geração", http.StatusInternalServerError)
-		return
-	}
 
-	apiDeleteURL := "http://localhost:8000/api/automacoes/apagar-form"
+	apiDeleteURL := automacoesBaseURL() + "/api/automacoes/apagar-form"
 	deleteResp, err := http.Post(apiDeleteURL, "application/json", bytes.NewBuffer(deleteJson))
 	if err != nil {
 		http.Error(w, "Erro ao chamar automacoes para apagar", http.StatusBadGateway)
@@ -690,17 +649,9 @@ func RegerarFormularioTreinamentoHandler(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	apiGerarURL := "http://localhost:8000/api/automacoes/gerar-forms"
-	resp, err := http.Post(apiGerarURL, "application/json", bytes.NewBuffer(generateJson))
+	err = repositories.EnfileirarJob("gerar_forms", generatePayload)
 	if err != nil {
-		http.Error(w, "Erro ao chamar automacoes para gerar", http.StatusBadGateway)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(resp.Body)
-		http.Error(w, fmt.Sprintf("Erro ao gerar formulario: %s", string(body)), http.StatusBadGateway)
+		http.Error(w, "Erro ao enfileirar job no banco: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
