@@ -55,22 +55,26 @@ func ObterDadosDashboard(dataInicio, dataFim string) (models.DashboardStats, err
 		return stats, err
 	}
 
-	// 4. Taxa de Presença Média
-	var capacidadeTotal int
-	queryCapacidade := `
-		SELECT COALESCE(SUM(capacidade_maxima), 0) 
-		FROM treinamentos t
+	// 4. Taxa de Presença Média (Presentes / Inscritos)
+	var totalInscritos, totalPresentes int
+	queryTaxa := `
+		SELECT 
+			COALESCE(COUNT(p.id), 0) AS total_inscritos,
+			COALESCE(COUNT(CASE WHEN p.status_presenca = 'PRESENTE' THEN 1 END), 0) AS total_presentes
+		FROM presencas p
+		INNER JOIN treinamentos t ON p.treinamento_id = t.id
 		WHERE t.data::date BETWEEN $1::date AND $2::date 
 		  AND t.status != 'CANCELADO'
-		  AND t.id IN (SELECT DISTINCT treinamento_id FROM presencas)
 	`
-	err = database.DB.QueryRow(queryCapacidade, dataInicio, dataFim).Scan(&capacidadeTotal)
+	err = database.DB.QueryRow(queryTaxa, dataInicio, dataFim).Scan(&totalInscritos, &totalPresentes)
 	if err != nil {
 		return stats, err
 	}
 
-	if capacidadeTotal > 0 {
-		stats.TaxaPresencaMedia = (stats.TotalParticipacoes * 100) / capacidadeTotal
+	if totalInscritos > 0 {
+		stats.TaxaPresencaMedia = (totalPresentes * 100) / totalInscritos
+	} else {
+		stats.TaxaPresencaMedia = 0
 	}
 
 	// 5. Média de Colaboradores por Loja Ativa
