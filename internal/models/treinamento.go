@@ -40,6 +40,7 @@ type TreinamentoResumo struct {
 	Descricao        string `json:"descricao"`
 	Categoria        string `json:"categoria"`
 	Local            string `json:"local"`
+	LocalID          string `json:"local_id"`
 	Modalidade       string `json:"modalidade"`
 	CapacidadeMaxima int    `json:"capacidade_maxima"`
 	Objetivo         string `json:"objetivo"`

@@ -109,7 +109,8 @@ func ListarTreinamentos() ([]models.TreinamentoResumo, error) {
 			COALESCE(responsavel, ''),
 			COALESCE(area_responsavel, ''),
 			COALESCE(tags, ''),
-			COALESCE(recorrente, false)
+			COALESCE(recorrente, false),
+			COALESCE(local_id::text, '')
 		FROM treinamentos
 		ORDER BY horario_inicio DESC
 	`
@@ -151,6 +152,7 @@ func ListarTreinamentos() ([]models.TreinamentoResumo, error) {
 			&t.AreaResponsavel,
 			&t.Tags,
 			&t.Recorrente,
+			&t.LocalID,
 		)
 
 		if err != nil {
@@ -240,6 +242,14 @@ func UpdateTreinamento(id string, t models.Treinamento) error {
 	//Tratamento do Status para fazer a string ficar toda Maiuscula para colocar no banco de dados
 	statusBanco := strings.ToUpper(t.Status)
 
+	// Tratamento do local_id: se vier vazio do frontend (local manual sem geofencing),
+	// salva como NULL no banco para não estourar erro de chave estrangeira (FK).
+	var localID sql.NullString
+	if strings.TrimSpace(t.LocalID) != "" {
+		localID.String = t.LocalID
+		localID.Valid = true
+	}
+
 	//cria a query do BD com update de cada uma das colunas onde o ID é o informado
 	query := `
 		UPDATE treinamentos
@@ -262,8 +272,9 @@ func UpdateTreinamento(id string, t models.Treinamento) error {
 			responsavel = $16, 
 			area_responsavel = $17, 
 			tags = $18, 
-			recorrente = $19
-		WHERE id = $20
+			recorrente = $19,
+			local_id = $20
+		WHERE id = $21
 	`
 	//executa a inserçao 'Exec' porque náo retorna nenhum valor, como o id na criaçao de um treinamento
 	resultado, err := database.DB.Exec(
@@ -272,7 +283,7 @@ func UpdateTreinamento(id string, t models.Treinamento) error {
 		horarioFimBanco, t.Local, t.Modalidade, t.Conteudo,
 		t.CapacidadeMaxima, t.SegmentoAlvo, statusBanco,
 		t.Objetivo, t.Observacoes, t.MaterialApoio,
-		t.Responsavel, t.AreaResponsavel, t.Tags, t.Recorrente, id,
+		t.Responsavel, t.AreaResponsavel, t.Tags, t.Recorrente, localID, id,
 	)
 
 	if err != nil {
