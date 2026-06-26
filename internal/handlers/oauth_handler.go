@@ -237,7 +237,10 @@ func GoogleOAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("%s/perfil?google=connected", frontendURL), http.StatusFound)
 }
 
-// GoogleOAuthStatusHandler retorna se o usuario esta conectado
+// GoogleOAuthStatusHandler retorna se o usuario esta conectado.
+// O campo "connected" indica que existe um token válido no banco (com refresh_token).
+// O campo "token_needs_refresh" avisa que o access_token de 1h expirou, mas a
+// conexão continua válida — o Python renovará automaticamente na próxima operação.
 func GoogleOAuthStatusHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
@@ -260,25 +263,41 @@ func GoogleOAuthStatusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var expiresAt time.Time
+	var refreshToken string
 	row := database.DB.QueryRow(
-		`SELECT expires_at FROM google_oauth_tokens WHERE user_id = $1`,
+		`SELECT expires_at, COALESCE(refresh_token, '') FROM google_oauth_tokens WHERE user_id = $1`,
 		userID,
 	)
 
 	connected := true
-	if err := row.Scan(&expiresAt); err != nil {
+	tokenNeedsRefresh := false
+
+	if err := row.Scan(&expiresAt, &refreshToken); err != nil {
 		if err == sql.ErrNoRows {
+			// Nenhum registro encontrado: realmente desconectado
 			connected = false
 		} else {
 			http.Error(w, "Erro ao consultar tokens", http.StatusInternalServerError)
 			return
 		}
+	} else {
+		// Existe registro no banco: verifica se o access_token expirou
+		// Mesmo expirado, a conexão é válida pois o refresh_token existe e o
+		// Python renovará o access_token automaticamente na próxima chamada.
+		if time.Now().After(expiresAt) {
+			tokenNeedsRefresh = true
+		}
+		// Sem refresh_token salvo: conexão comprometida, forçar reconexão
+		if refreshToken == "" {
+			connected = false
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
-		"connected":  connected,
-		"expires_at": expiresAt,
+		"connected":          connected,
+		"token_needs_refresh": tokenNeedsRefresh,
+		"expires_at":         expiresAt,
 	})
 }
 
