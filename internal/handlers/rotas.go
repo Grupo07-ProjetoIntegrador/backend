@@ -65,6 +65,8 @@ func ConfigurarRotas() {
 
 	//Rota para adicionar manualmente representante
 	http.HandleFunc("/api/treinamentos/presencas/manual", CriarPresencaManualHandler)
+	//Rota para editar uma presença
+	http.HandleFunc("/api/treinamentos/presencas/editar", EditarPresencaHandler)
 	//Rota para deletar uma presença
 	http.HandleFunc("/api/treinamentos/presencas/deletar", DeletarPresencaHandler)
 

@@ -27,3 +27,10 @@ type CriarPresencaInput struct {
 	Representante string `json:"representante"`
 	Status        string `json:"status"`
 }
+
+type EditarPresencaInput struct {
+	ID            string `json:"id"`
+	LUC           string `json:"luc"`
+	Representante string `json:"representante"`
+	Status        string `json:"status"`
+}

@@ -199,3 +199,28 @@ func DeletarPresenca(id string) error {
 
 	return nil
 }
+
+// EditarPresenca atualiza o LUC (loja_id), nome do participante e status no banco de dados pelo ID da presenca
+func EditarPresenca(id string, luc string, nomeParticipante string, status string) error {
+	var lojaID string
+
+	// 1. Busca o ID da loja baseado no LUC enviado pelo Front
+	queryLoja := `SELECT id FROM lojas WHERE luc = $1 LIMIT 1`
+	err := database.DB.QueryRow(queryLoja, luc).Scan(&lojaID)
+	if err != nil {
+		return fmt.Errorf("loja com o LUC %s não foi encontrada no sistema", luc)
+	}
+
+	// 2. Atualiza os dados na tabela de presencas
+	query := `
+		UPDATE presencas 
+		SET loja_id = $1, nome_participante = $2, status_presenca = $3
+		WHERE id = $4
+	`
+	_, err = database.DB.Exec(query, lojaID, nomeParticipante, status, id)
+	if err != nil {
+		return fmt.Errorf("erro ao atualizar presença no banco: %v", err)
+	}
+
+	return nil
+}

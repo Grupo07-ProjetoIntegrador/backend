@@ -423,3 +423,44 @@ func ListarLocaisHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(locais)
 }
+
+func EditarPresencaHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "PUT, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodPut && r.Method != http.MethodPost {
+		http.Error(w, `{"erro": "Método não permitido"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	var input models.EditarPresencaInput
+	err := json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		http.Error(w, `{"erro": "JSON inválido"}`, http.StatusBadRequest)
+		return
+	}
+
+	if input.ID == "" || input.LUC == "" || input.Representante == "" {
+		http.Error(w, `{"erro": "Todos os campos são obrigatórios"}`, http.StatusBadRequest)
+		return
+	}
+
+	input.Status = strings.ToUpper(input.Status)
+
+	err = repositories.EditarPresenca(input.ID, input.LUC, input.Representante, input.Status)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"erro": err.Error()})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"mensagem": "Participante editado com sucesso!"})
+}
